@@ -18,6 +18,6 @@ class Test:
         return str(self.source_code)
 
     @staticmethod
-    def to_test_suite(tests:[str or Test], author:str='unknow') -> (Test,):
+    def to_test_suite(tests:[str or 'Test'], author:str='unknow') -> ('Test',):
         return tuple(test if isinstance(test, Test) else Test(test, author)
                      for test in tests)
