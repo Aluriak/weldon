@@ -48,7 +48,9 @@ Testers are a special flavor of players that have for only job to upload tests t
 - [x] cut this implementation into dedicated files.
 - [ ] perform a real sandboxing to avoid attacks by players on the server (firejail ? apparmor ?).
 - [ ] provides one supplementary problem example.
-- [ ] over the network discussion between server and players, allowing the program to be used by multiple players without access to the server machine, and also ensure that players do not access internal data of the server (that includes hidden tests and everyone's users).
+- [x] over the network discussion between server and players, allowing the program to be used by multiple players without access to the server machine, and also ensure that players do not access internal data of the server (that includes hidden tests and everyone's users).
+- [ ] verify multi-user handling of the WebInterface
+- [ ] design a single file module for clients so they can use the functions easily.
 - [ ] network discussion needs encryption: using wireshark its easy to intercept token, source and submissions of others players.
 - [ ] extend weldon to work with arbitrary command for testing result generation (this leads to arbitrary language support).
 - [ ] arbitrary language and unit test framework support.
