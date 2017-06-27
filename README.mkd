@@ -20,6 +20,30 @@ Community tests are uploaded by coders. These allow the students to perform aggr
 Testers are a special flavor of players that have for only job to upload tests that fail in other players submissions.
 
 
+
+## Current state
+Weldon is currently in POC stage : all codes here are mainly
+here to show that the goals are realistic and reachable.
+These codes should not be used in production.
+
+
+
+## Examples
+Run or read module *problem01.py*, that contains a linear use case where a teacher create a problem
+and a student send solutions and tests then retrieve the results.
+
+Module *webclient.py* is exactly the same story, but using the over-the-network API of weldon.
+Therefore, an instance of the *webserver.py* must run during *webclient* execution.
+
+
+
+## Installation
+Create your virtualenv with pytest inside. Run the modules you want to. Hack around.
+
+Currently weldon is not packaged, but that's something
+that will naturally arise when Weldon will quit the POC stage.
+
+
 ## Features
 - [x] two user level: player and rooter. A rooter is a player.
 - [x] a user is identified by a unique secret token sent by server after registration.
@@ -47,10 +71,10 @@ Testers are a special flavor of players that have for only job to upload tests t
 - [x] allow teachers to add new public and hidden tests.
 - [x] cut this implementation into dedicated files.
 - [ ] perform a real sandboxing to avoid attacks by players on the server (firejail ? apparmor ?).
-- [ ] provides one supplementary problem example.
+- [ ] provides one supplementary problem example, with different use-case and more complex story (involving multiple problems and students).
 - [x] over the network discussion between server and players, allowing the program to be used by multiple players without access to the server machine, and also ensure that players do not access internal data of the server (that includes hidden tests and everyone's users).
 - [ ] verify multi-user handling of the WebInterface
-- [ ] design a single file module for clients so they can use the functions easily.
+- [ ] automatic generation of a single file module for client side of the webinterface so they can use the functions by just pluging it into their project.
 - [ ] network discussion needs encryption: using wireshark its easy to intercept token, source and submissions of others players.
 - [ ] extend weldon to work with arbitrary command for testing result generation (this leads to arbitrary language support).
 - [ ] arbitrary language and unit test framework support.
