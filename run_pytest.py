@@ -57,7 +57,7 @@ def run_tests_on_problem(problem, source_code, run_dir='./run/',
     return stdout.decode()
 
 
-def extract_results_from_pytest_output(output:str, problem_id:str) -> SubmissionResult:
+def extract_results_from_pytest_output(output:str, problem_id:int) -> SubmissionResult:
     """Return a SubmissionResult instance describing given pytest output"""
     reg_test = re.compile(r'^[\/a-zA-Z_0-9]+test_([hiddenpubliccommunity]+)_cases\.py::test_([a-zA-Z_0-9]+) ([PASSEDFAIL]+)$')
     tests = {}  # test name: test status
