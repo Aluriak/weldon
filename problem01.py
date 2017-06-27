@@ -109,12 +109,10 @@ pprint(server_answer.tests)
 
 
 print('\n\nI can also send new unit tests.')
-server_answer_test = server.submit_test(my_token, problem.id, """
+server.submit_test(my_token, problem.id, """
 def test_sent_by_lucas():
     assert revcomp('AAT') == 'ATT'
 """)
-print('Server said:', server_answer_test)
-print(server.retrieve_public_problem(my_token, 'problem01').community_tests)
 
 
 print('\n\nI can send again my solution, to prove that i pass the new test.')
