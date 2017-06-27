@@ -40,7 +40,7 @@ Testers are a special flavor of players that have for only job to upload tests t
 - [ ] configuration of testers by problem (how many ? randomly choosen ?).
 - [ ] system to avoid naming collisions leading one player to hide a community test by providing a new test with the same name.
 - [ ] perform post-session report for each player, providing him insight of the data (graphic of number of passing (hidden) test and regression according to time, for instance), and the hidden tests.
-- [ ] allow teacher to add new public and hidden tests.
+- [x] allow teachers to add new public and hidden tests.
 - [x] cut this implementation into dedicated files.
 - [ ] perform a real sandboxing to avoid attacks by players on the server (firejail ? apparmor ?).
 - [ ] provides one supplementary problem example.
