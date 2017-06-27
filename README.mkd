@@ -1,0 +1,78 @@
+# Weldon
+Weldon is mainly a system built on top of any OS and editor allowing students to practice TDD,
+aggressive testing and more generally Python.
+
+Weldon also allow a battle mode, where teams of coders confront against teams of testers.
+
+
+## Principles
+Players are the main user of Weldon, and generally named *students* or *coders* (rooters are the admin/teachers).
+Rooter starts a server, to which he can add *problems*.
+Problems are retrieved by coders that can then work as they wish on it,
+and when wanted submit their source code, that constitute their *solution* to the problem.
+
+Coders answers are collected by the server, and tested against the *unit tests* defined in the problem.
+Unit tests comes in 3 flavors : public, hidden and community.
+Public tests are accessible by coders, so they can see what to expect from tests.
+Hidden tests are not accessible by coders. This ensure that they do not code a 1-to-1 mapping of I/O.
+Community tests are uploaded by coders. These allow the students to perform aggressive testing against each others.
+
+Testers are a special flavor of players that have for only job to upload tests that fail in other players submissions.
+
+
+## Features
+- [x] two user level: player and rooter. A rooter is a player.
+- [x] a user is identified by a unique secret token sent by server after registration.
+- [x] problem definition: have description, title, and tests.
+- [x] tests are divided into 3 category: public, hidden and community. The second contains tests that are known only by teachers.
+- [x] users can register using a password defined by Server's admin.
+- [x] submissions (source code for a given problem) is tested using pytest.
+- [x] submission result (output of pytest + parsed information) is returned to user.
+- [x] submission result are kept in a local database. Further exploitation of these data is possible.
+- [x] users with last submitted source code meeting all the tests can upload community tests for everyone.
+- [x] basic permission management: only teachers can access hidden tests of a problem.
+- [ ] new role: tester, a player that do not have to submit a solution to upload new tests. Testers gain points by uploading tests that are failed by players.
+- [ ] in pytest return result, filter out lines that expose the content of hidden tests.
+- [ ] allow arbitrary number/hierarchy of file for user submissions
+- [ ] allow arbitrary number/hierarchy of file for test submissions and definition
+- [ ] allow arbitrary number/hierarchy of file for test problem definition (that could include public & community tests, readme, instructions, code template,…)
+- [ ] management of tests as a list of functions, not a plain string
+- [ ] configuration of testers by problem (how many ? randomly choosen ?).
+- [ ] system to avoid naming collisions leading one player to hide a community test by providing a new test with the same name.
+- [ ] perform post-session report for each player, providing him insight of the data (graphic of number of passing (hidden) test and regression according to time, for instance), and the hidden tests.
+- [ ] allow teacher to add new public and hidden tests.
+- [ ] cut this implementation into dedicated files.
+- [ ] perform a real sandboxing to avoid attacks by players on the server (firejail ? apparmor ?).
+- [ ] provides one supplementary problem example.
+- [ ] over the network discussion between server and players, allowing the program to be used by multiple players without access to the server machine, and also ensure that players do not access internal data of the server (that includes hidden tests and everyone's users).
+- [ ] network discussion needs encryption: using wireshark its easy to intercept token, source and submissions of others players.
+- [ ] extend weldon to work with arbitrary command for testing result generation (this leads to arbitrary language support).
+- [ ] arbitrary language and unit test framework support.
+
+
+
+## Sandboxing
+A sandboxing solution for testing is a necessity before employing Weldon in production.
+
+
+[wiki about sandboxing](https://wiki.python.org/moin/SandboxedPython)
+
+### pypy sandboxing
+[pypy](http://pypy.org/features.html) and [doc](http://pypy.readthedocs.io/en/latest/sandbox.html)
+Cons: sandboxing is currently incomplete. Stdlib don't fully exists !
+
+### chrootbuilder
+[chrootbuilder](http://www.wiredyne.com/software/chrootbuilder.html)
+Use OS related data for fake a root hierarchy and sandbox a script.
+
+Cons: needs to be read because of many linux distribution-dependant paths
+It's an automatic chroot jail generator.
+
+### chroot, manually
+Cons: not fully secure
+
+### firejail
+[firejail](https://firejail.wordpress.com/) have simplicity in mind.
+
+### apparmor
+[archlinux doc](https://wiki.archlinux.org/index.php/AppArmor)

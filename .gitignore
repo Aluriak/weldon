@@ -1,0 +1,7 @@
+run.backup/
+venv/
+__pycache__/
+run/
+run.backup/
+Session.vim
+others/
