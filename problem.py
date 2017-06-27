@@ -37,6 +37,16 @@ class Problem:
     @property
     def source_name(self): return self._source_name
 
+    def add_public_test(self, test:str):
+        """Add a single test to public tests"""
+        self._public_tests += (test,)
+    def add_hidden_test(self, test:str):
+        """Add a single test to hidden tests"""
+        self._hidden_tests += (test,)
+    def add_community_test(self, test:str):
+        """Add a single test to community tests"""
+        self._community_tests += (test,)
+
     def source_code_filename(self, dir:str='.') -> str:
         return os.path.join(dir, self.source_name + '.py')
     def public_test_filename(self, dir:str) -> str:
@@ -50,3 +60,9 @@ class Problem:
         """Return the very same object, but without the hidden unit tests"""
         return Problem(self.id, self.title, self.description, self.public_tests,
                        '', self.source_name, self.author, self.community_tests)
+    def copy(self, id=None):
+        """Return the very same object (eventually with overwritten id)"""
+        return Problem(id or self.id, self.title, self.description,
+                       tuple(self.public_tests), tuple(self.hidden_tests),
+                       self.source_name, self.author,
+                       tuple(self.community_tests))
