@@ -8,6 +8,9 @@ from test import Test
 
 class Problem:
     """Definition of a problem, notabily description and unit tests"""
+    __slots__ = ['_id', '_title', '_description', '_public_tests',
+                 '_hidden_tests', '_community_tests',
+                 '_source_name', '_author']
 
     def __init__(self, id:int, title:str, description:str, public_tests:iter,
                  hidden_tests:iter, source_name:str=None, author:str=None,
@@ -38,6 +41,11 @@ class Problem:
     @property
     def source_name(self): return self._source_name
 
+    @property
+    def fields(self) -> iter:
+        yield from (field.lstrip('_') for field in self.__slots__)
+
+
     def add_public_test(self, test:str):
         """Add a single test to public tests"""
         self._public_tests += (test,)
@@ -48,6 +56,7 @@ class Problem:
         """Add a single test to community tests"""
         self._community_tests += (test,)
 
+
     def source_code_filename(self, dir:str='.') -> str:
         return os.path.join(dir, self.source_name + '.py')
     def public_test_filename(self, dir:str) -> str:
@@ -56,6 +65,7 @@ class Problem:
         return os.path.join(dir, 'test_hidden_cases.py')
     def community_test_filename(self, dir:str) -> str:
         return os.path.join(dir, 'test_community_cases.py')
+
 
     def as_public_data(self):
         """Return the very same object, but without the hidden unit tests"""
@@ -67,3 +77,16 @@ class Problem:
                        tuple(self.public_tests), tuple(self.hidden_tests),
                        self.source_name, self.author,
                        tuple(self.community_tests))
+
+
+    def to_json(self) -> dict:
+        return {'__weldon_Problem__': {
+            field: getattr(self, field)
+            for field in self.fields
+        }}
+
+    @staticmethod
+    def from_json(data:dict) -> object:
+        payload = data.get('__weldon_Problem__')
+        if payload:
+            return Problem(**payload)

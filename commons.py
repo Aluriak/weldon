@@ -41,15 +41,13 @@ def custom_json_decoder(classes:[type]):
 
 class SubmissionResult:
     """Object created by the server and returned to the player"""
+    __slots__ = ['_tests', '_full_trace', '_problem_id']
 
     def __init__(self, tests, full_trace, problem_id):
         self._tests = dict(tests)
         self._full_trace = str(full_trace)
         self._problem_id = int(problem_id)
-        self._total_success = all(test.succeed for test in tests.values())
 
-    @property
-    def total_success(self): return self._total_success
     @property
     def tests(self): return self._tests
     @property
@@ -57,4 +55,21 @@ class SubmissionResult:
     @property
     def problem_id(self): return self._problem_id
     @property
-    def total_success(self): return self._total_success
+    def total_success(self): return all(test.succeed for test in self.tests.values())
+
+    @property
+    def fields(self) -> iter:
+        yield from (field.lstrip('_') for field in self.__slots__)
+
+
+    def to_json(self) -> dict:
+        return {'__weldon_SubmissionResult__': {
+            field: getattr(self, field)
+            for field in self.fields
+        }}
+
+    @staticmethod
+    def from_json(data:dict) -> object:
+        payload = data.get('__weldon_SubmissionResult__')
+        if payload:
+            return SubmissionResult(**payload)
