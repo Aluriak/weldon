@@ -8,15 +8,15 @@ import os
 class Problem:
     """Definition of a problem, notabily description and unit tests"""
 
-    def __init__(self, id:int, title:str, description:str, public_tests:str,
-                 hidden_tests:str, source_name:str=None, author:str=None,
-                 community_tests:str=''):
+    def __init__(self, id:int, title:str, description:str, public_tests:iter,
+                 hidden_tests:iter, source_name:str=None, author:str=None,
+                 community_tests:iter=()):
         self._id = int(id)
         self._title = str(title)
         self._description = str(description)
-        self._public_tests = str(public_tests)
-        self._hidden_tests = str(hidden_tests)
-        self._community_tests = str(community_tests)
+        self._public_tests = tuple(public_tests)
+        self._hidden_tests = tuple(hidden_tests)
+        self._community_tests = tuple(community_tests)
         self._source_name = str(source_name or 'problem{}'.format(self.id))
         self._author = str(author or 'unknow')
 
@@ -27,13 +27,11 @@ class Problem:
     @property
     def description(self): return self._description
     @property
-    def public_tests(self): return self._public_tests
+    def public_tests(self): return tuple(self._public_tests)
     @property
-    def hidden_tests(self): return self._hidden_tests
+    def hidden_tests(self): return tuple(self._hidden_tests)
     @property
-    def community_tests(self): return self._community_tests
-    @community_tests.setter
-    def community_tests(self, tests:str): self._community_tests = str(tests)
+    def community_tests(self): return tuple(self._community_tests)
     @property
     def author(self): return self._author
     @property

@@ -42,15 +42,15 @@ def run_tests_on_problem(problem, source_code, run_dir='./run/',
     with open(runnable_public_test_file, 'w') as fd:
         fd.write('import pytest\n')
         fd.write('from {} import *\n\n'.format(problem.source_name))
-        fd.write(problem.public_tests)
+        fd.write('\n'.join(problem.public_tests))
     with open(runnable_hidden_test_file, 'w') as fd:
         fd.write('import pytest\n')
         fd.write('from {} import *\n\n'.format(problem.source_name))
-        fd.write(problem.hidden_tests)
+        fd.write('\n'.join(problem.hidden_tests))
     with open(runnable_community_test_file, 'w') as fd:
         fd.write('import pytest\n')
         fd.write('from {} import *\n\n'.format(problem.source_name))
-        fd.write(problem.community_tests)
+        fd.write('\n'.join(problem.community_tests))
     # run the tests
     proc = subprocess.Popen(['pytest', run_dir, '-vv'], stdout=subprocess.PIPE)
     stdout, stderr = proc.communicate()

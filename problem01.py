@@ -18,29 +18,33 @@ Insert here more biological background and formal explanations,
 and also expected behavior on error.
 """
 
-PUBLIC_TESTS = """
+PUBLIC_TESTS = ("""
 def test_onenuc():
     assert revcomp('A') == 'T'
     assert revcomp('T') == 'A'
     assert revcomp('C') == 'G'
     assert revcomp('G') == 'C'
+""","""
 def test_multinuc_1():
     assert revcomp('ATCG') == 'CGAT'
+""","""
 def test_multinuc_2():
     assert revcomp('AAAACAAAA') == 'TTTTGTTTT'
+""","""
 def test_error1():
     with pytest.raises(ValueError):
         revcomp('ABCD')
-"""
-HIDDEN_TESTS = """
-
+""")
+HIDDEN_TESTS = ("""
 def test_multinuc_3():
     assert revcomp('AATACATAA') == 'TTATGTATT'
+""","""
 def test_multinuc_4():
     assert revcomp('ACGACATAA') == 'TTATGTCGT'
+""","""
 def test_multinuc_5():
     assert revcomp('acgacataa') == 'ttatgtcgt'
-"""
+""")
 
 print('#' * 80)
 print('# TEARCHER PART')
