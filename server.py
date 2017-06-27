@@ -36,10 +36,11 @@ class Server:
             self._players_name[new] = str(l for l in name if re.match(r'[a-zA-Z_0-9]', l))
             return new
 
-    def register_rooter(self, password:str='') -> str:
+    def register_rooter(self, name:str, password:str='') -> str:
         if password == self.rooter_password:
             new = str(uuid.uuid4())
             self.tokens_rooter.add(new)
+            self._players_name[new] = str(l for l in name if re.match(r'[a-zA-Z_0-9]', l))
             return new
 
     def register_problem(self, token:str, title:str, description:str,
@@ -79,6 +80,7 @@ class Server:
         """Yield a new unused problem id"""
         self._next_problem_id += 1
         return self._next_problem_id - 1
+
 
     def submit_solution(self, token:str, problem_id:int, source_code:str) -> ValueError or SubmissionResult:
         """Run unit tests for given problem using given solution.
@@ -140,7 +142,8 @@ class Server:
         player = token in self.tokens_player
         need_rooter = method in self.restricted_to_rooter
         if not rooter and not player:
-            raise ValueError("Given token is not allowed to do anything.")
+            raise ValueError("Given token ({}) is not allowed to do anything."
+                             "".format(token))
         if not rooter and need_rooter:
             error_msg = lambda func: func
             raise ValueError("Given token is not allowed to {}"
