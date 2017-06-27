@@ -3,6 +3,7 @@
 """
 
 import os
+from test import Test
 
 
 class Problem:
@@ -14,9 +15,9 @@ class Problem:
         self._id = int(id)
         self._title = str(title)
         self._description = str(description)
-        self._public_tests = tuple(public_tests)
-        self._hidden_tests = tuple(hidden_tests)
-        self._community_tests = tuple(community_tests)
+        self._public_tests = Test.to_test_suite(public_tests)
+        self._hidden_tests = Test.to_test_suite(hidden_tests)
+        self._community_tests = Test.to_test_suite(community_tests)
         self._source_name = str(source_name or 'problem{}'.format(self.id))
         self._author = str(author or 'unknow')
 
