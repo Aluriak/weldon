@@ -50,9 +50,7 @@ class WebInterface:
         command, args, kwargs = wjson.from_json(data)
         if command in self._server_methods:
             ret = getattr(self.server, command)(*args, **kwargs)
-            print('XINZIW:webserver:ret:', ret)
             sent = wjson.as_json(ret)
-            print('KLDMQF:webserver:as_json:', sent)
             return sent
         return '{"NOPE": "Invalid command"}'
 
