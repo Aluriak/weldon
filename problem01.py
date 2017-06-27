@@ -47,7 +47,7 @@ def test_multinuc_5():
 """)
 
 print('#' * 80)
-print('# TEARCHER PART')
+print('# ROOTER PART')
 print('#' * 80)
 
 
