@@ -9,7 +9,7 @@ This contains:
 
 from pprint import pprint
 import pytest
-import weldon
+import server as weldon
 
 
 DESCRIPTION = """Writing in a module *revcomp.py* a function *revcomp*
