@@ -33,13 +33,16 @@ Testers are a special flavor of players that have for only job to upload tests t
 - [x] basic permission management: only teachers can access hidden tests of a problem.
 - [ ] new role: tester, a player that do not have to submit a solution to upload new tests. Testers gain points by uploading tests that are failed by players.
 - [ ] in pytest return result, filter out lines that expose the content of hidden tests.
+- [ ] allow teacher to provide at problem definition a reference implementation. Any community test that fails against reference implementation is rejected.
 - [ ] allow arbitrary number/hierarchy of file for user submissions
 - [ ] allow arbitrary number/hierarchy of file for test submissions and definition
 - [ ] allow arbitrary number/hierarchy of file for test problem definition (that could include public & community tests, readme, instructions, code template,…)
-- [ ] management of tests as a list of functions, not a plain string
+- [x] management of tests as a list of functions, not a plain string
+- [ ] management of tests as a list of complex objects having implementation, function name, author,…
 - [ ] configuration of testers by problem (how many ? randomly choosen ?).
 - [ ] system to avoid naming collisions leading one player to hide a community test by providing a new test with the same name.
 - [ ] perform post-session report for each player, providing him insight of the data (graphic of number of passing (hidden) test and regression according to time, for instance), and the hidden tests.
+- [ ] perform during-session report for all players, providing insight about best players/testers.
 - [x] allow teachers to add new public and hidden tests.
 - [x] cut this implementation into dedicated files.
 - [ ] perform a real sandboxing to avoid attacks by players on the server (firejail ? apparmor ?).
