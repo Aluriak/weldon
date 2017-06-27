@@ -53,9 +53,13 @@ class Server:
         return problem.as_public_data()
 
     def _get_problem(self, problem_id:Problem or int or str) -> Problem or ValueError:
-        """Access to a problem knowing its id or title"""
+        """Access to a problem knowing its instance or id or title."""
         if isinstance(problem_id, Problem):
-            problem_id = problem.id
+            # return the given instance, not the instance known by server
+            if problem_id.id in self.problems:
+                return problem_id
+            else:
+                problem_id = problem_id.id
         problem = self.problems.get(problem_id)
         if not problem:
             raise ValueError("Problem {} do not exists".format(problem_id))
