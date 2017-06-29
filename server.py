@@ -12,6 +12,7 @@ from wtest import Test
 from commons import SubmissionResult, ServerError
 from problem import Problem
 from run_pytest import result_from_pytest
+from player_report import make_report_on_player
 
 
 # A valider is a pair (valider function, error message)
@@ -41,13 +42,16 @@ class Server:
         self._player_name_valider = player_name_valider
         self._rooter_name_valider = rooter_name_valider
         self.problems = {}  # id or name: Problem instance
+        self.open_problems = set()  # id of problems workable by students
         self._next_problem_id = 1
         self.rooter_password = str(rooter_password)
         self.player_password = str(player_password)
         self.tokens_player = set()
         self.tokens_rooter = set()
         self.restricted_to_rooter = {self.register_problem, self.retrieve_problem,
-                                     self.add_hidden_test, self.add_public_test}
+                                     self.add_hidden_test, self.add_public_test,
+                                     self.close_problem_session,
+                                     self.retrieve_players_of}
         self._db = defaultdict(lambda: defaultdict(list))  # token: {problem_id: [data]}
         self._players_name = {}  # token: name
 
@@ -72,12 +76,16 @@ class Server:
 
     def register_problem(self, token:str, title:str, description:str,
                          public_tests:str, hidden_tests:str) -> id:
-        """Register a new problem with given description and tests"""
+        """Register a new problem with given description and tests,
+        and open its session.
+
+        """
         self.validate_token(token, self.register_problem)
         problem = Problem(self._yield_problem_id(), title, description,
                           public_tests, hidden_tests, author=token)
         self.problems[problem.id] = problem
         self.problems[problem.title] = problem
+        self.open_problems.add(problem.id)
         return problem.as_public_data()
 
     def _get_problem(self, problem_id:Problem or int or str) -> Problem or ServerError:
@@ -107,6 +115,40 @@ class Server:
         """Yield a new unused problem id"""
         self._next_problem_id += 1
         return self._next_problem_id - 1
+
+    def close_problem_session(self, token:str, problem_id:int or str) -> None or ServerError:
+        """Remove given problem of the list of open problems"""
+        self.validate_token(token, self.close_problem_session)
+        problem = self._get_problem(problem_id)
+        try:
+            self.open_problems.remove(problem.id)
+        except KeyError:  # problem not in open problems
+            raise ServerError("Given problem ({}) is already closed".format(problem.title))
+
+
+    def retrieve_report(self, token:str, problem_id:int or str) -> str or ServerError:
+        """Return A full report about given token activity of given problem"""
+        self.validate_token(token, self.retrieve_report)
+        problem = self._get_problem(problem_id)
+        player_name = self._players_name[token]
+        report = make_report_on_player(player_name, self._player_submissions(token, problem.id))
+        return '\n'.join(report)
+
+    def retrieve_players_of(self, token:str, problem_id:int or str) -> [str] or ServerError:
+        """Return tokens of players associated to given problem
+
+        TODO: This is dangerous, since token can be sent by the server.
+        An improved solution could be to allow internal mapping between
+        players name and their token inside the server,
+        and allow rooters to use players names
+        instead of their tokens.
+        This also need the Server to force players
+        to use all different names.
+
+        """
+        self.validate_token(token, self.retrieve_players_of)
+        problem = self._get_problem(problem_id)
+        return tuple(self._players_involved_in(problem.id))
 
 
     def submit_solution(self, token:str, problem_id:int, source_code:str) -> ServerError or SubmissionResult:
