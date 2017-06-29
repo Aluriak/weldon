@@ -171,7 +171,7 @@ class Server:
         self.validate_token(token, self.submit_test)
         problem = self._get_problem(problem_id)
         self.validate_test(token, test_code, problem.id)
-        problem.add_community_test(Test(str(test_code), token))
+        problem.add_community_test(Test(str(test_code), token, 'community'))
 
 
     def validate_test(self, token:str, test_code, problem_id) -> ServerError or None:
@@ -182,7 +182,7 @@ class Server:
 
         # verify that player succeeds on this new test
         alt_problem = problem.copy()
-        alt_problem.add_community_test(str(test_code))
+        alt_problem.add_community_test(Test(str(test_code), token, 'community'))
         source_code = self._player_last_submission(token, problem_id).source_code
         submission_result = self._run_tests_for_player(token, alt_problem, source_code, dry=True)
         if not submission_result.total_success:
@@ -193,13 +193,13 @@ class Server:
         """Add given test to the set of public tests of given problem"""
         self.validate_token(token, self.add_public_test)
         problem = self._get_problem(problem_id)
-        problem.add_public_test(str(test_code))
+        problem.add_public_test(Test(str(test_code), token, 'public'))
 
     def add_hidden_test(self, token:str, problem_id:int, test_code:str) -> ServerError or None:
         """Add given test to the set of hidden tests of given problem"""
         self.validate_token(token, self.add_hidden_test)
         problem = self._get_problem(problem_id)
-        problem.add_hidden_test(str(test_code))
+        problem.add_hidden_test(Test(str(test_code), token, 'hidden'))
 
 
     def _test_upload_allowed(self, token:str, problem_id:int) -> bool:

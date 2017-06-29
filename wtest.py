@@ -8,19 +8,21 @@ class Test:
     It should be associated with a Problem.
 
     """
-    __slots__ = ['source_code', 'author']
+    __slots__ = ['source_code', 'author', 'type']
 
-    def __init__(self, source_code:str, author:str):
+    def __init__(self, source_code:str, author:str, type:str):
         self.source_code = str(source_code).strip('\n') + '\n'
         self.author = str(author)
+        self.type = str(type)
+        assert self.type in {'public', 'hidden', 'community'}
 
     def __str__(self):
         """Return the ready to be print in file version of the instance"""
         return str(self.source_code)
 
     @staticmethod
-    def to_test_suite(tests:[str or 'Test'], author:str='unknow') -> ('Test',):
-        return tuple(test if isinstance(test, Test) else Test(test, author)
+    def to_test_suite(tests:[str or 'Test'], author:str='unknow', type:str='public') -> ('Test',):
+        return tuple(test if isinstance(test, Test) else Test(test, author, type)
                      for test in tests)
 
 
