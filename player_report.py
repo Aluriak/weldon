@@ -35,7 +35,7 @@ def plot_passed_tests(number_of_passed_test:iter) -> str:
     output = StringIO()
     with redirect_stdout(output):
         plot_hist(data, title='Number of passed tests according to time',
-                  pch='█', colour='green', showSummary=True, height=hist_height)
+                  pch='█', colour='green', height=hist_height)
     return output.getvalue()
 
 
