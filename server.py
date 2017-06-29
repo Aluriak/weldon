@@ -8,7 +8,7 @@ import re
 import uuid
 from collections import defaultdict, namedtuple
 
-from commons import SubmissionResult
+from commons import SubmissionResult, ServerError
 from problem import Problem
 from run_pytest import (run_tests_on_problem,
                         extract_results_from_pytest_output)
@@ -53,7 +53,7 @@ class Server:
         self.problems[problem.title] = problem
         return problem.as_public_data()
 
-    def _get_problem(self, problem_id:Problem or int or str) -> Problem or ValueError:
+    def _get_problem(self, problem_id:Problem or int or str) -> Problem or ServerError:
         """Access to a problem knowing its instance or id or title."""
         if isinstance(problem_id, Problem):
             # return the given instance, not the instance known by server
@@ -63,15 +63,15 @@ class Server:
                 problem_id = problem_id.id
         problem = self.problems.get(problem_id)
         if not problem:
-            raise ValueError("Problem {} do not exists".format(problem_id))
+            raise ServerError("Problem {} do not exists".format(problem_id))
         return problem
 
-    def retrieve_problem(self, token:str, problem_id:int or str) -> Problem or ValueError:
-        """Return problem of given id or name ; raise ValueError if no problem"""
+    def retrieve_problem(self, token:str, problem_id:int or str) -> Problem or ServerError:
+        """Return problem of given id or name ; raise ServerError if no problem"""
         self.validate_token(token, self.retrieve_problem)
         return self._get_problem(problem_id)
 
-    def retrieve_public_problem(self, token:str, problem_id:str) -> Problem or ValueError:
+    def retrieve_public_problem(self, token:str, problem_id:str) -> Problem or ServerError:
         """If token is allowed to, return the public version of wanted problem"""
         self.validate_token(token, self.retrieve_public_problem)
         return self._get_problem(problem_id).as_public_data()
@@ -82,27 +82,27 @@ class Server:
         return self._next_problem_id - 1
 
 
-    def submit_solution(self, token:str, problem_id:int, source_code:str) -> ValueError or SubmissionResult:
+    def submit_solution(self, token:str, problem_id:int, source_code:str) -> ServerError or SubmissionResult:
         """Run unit tests for given problem using given solution.
 
         token -- unique token of the player
         problem_id -- uid of a problem known by Server instance
         source_code -- the file containing the code implementing the solution
 
-        Raise ValueError if problem_id is not valid, or a SubmissionResult object.
+        Raise ServerError if problem_id is not valid, or a SubmissionResult object.
 
         """
         self.validate_token(token, self.submit_solution)
         return self._run_tests_for_player(token, problem_id, source_code)
 
 
-    def submit_test(self, token:str, problem_id:int, test_code:str) -> ValueError or None:
+    def submit_test(self, token:str, problem_id:int, test_code:str) -> ServerError or None:
         """
         """
         self.validate_token(token, self.submit_test)
         problem = self._get_problem(problem_id)
         if not self._test_upload_allowed(token, problem_id):
-            raise ValueError("Given token's last submission did not succeed all tests")
+            raise ServerError("Given token's last submission did not succeed all tests")
 
         # verify that player succeeds on this new test
         alt_problem = problem.copy()
@@ -110,18 +110,16 @@ class Server:
         source_code = self._player_last_submission(token, problem_id).source_code
         submission_result = self._run_tests_for_player(token, alt_problem, source_code, dry=True)
         if not submission_result.total_success:
-            raise ValueError("Given test fail on last submission")
-        # player provide a test he pass himself, so it can be added to the tests
-        problem.add_community_test(str(test_code))
+            raise ServerError("Given test fail on last submission")
 
 
-    def add_public_test(self, token:str, problem_id:int, test_code:str) -> ValueError or None:
+    def add_public_test(self, token:str, problem_id:int, test_code:str) -> ServerError or None:
         """Add given test to the set of public tests of given problem"""
         self.validate_token(token, self.add_public_test)
         problem = self._get_problem(problem_id)
         problem.add_public_test(str(test_code))
 
-    def add_hidden_test(self, token:str, problem_id:int, test_code:str) -> ValueError or None:
+    def add_hidden_test(self, token:str, problem_id:int, test_code:str) -> ServerError or None:
         """Add given test to the set of hidden tests of given problem"""
         self.validate_token(token, self.add_hidden_test)
         problem = self._get_problem(problem_id)
@@ -136,17 +134,17 @@ class Server:
         return False
 
 
-    def validate_token(self, token:str, method:callable) -> ValueError or None:
+    def validate_token(self, token:str, method:callable) -> ServerError or None:
         """Raise an error if given token do not have access to given method"""
         rooter = token in self.tokens_rooter
         player = token in self.tokens_player
         need_rooter = method in self.restricted_to_rooter
         if not rooter and not player:
-            raise ValueError("Given token ({}) is not allowed to do anything."
+            raise ServerError("Given token ({}) is not allowed to do anything."
                              "".format(token))
         if not rooter and need_rooter:
             error_msg = lambda func: func
-            raise ValueError("Given token is not allowed to {}"
+            raise ServerError("Given token is not allowed to {}"
                              "".format(method.__name__.replace('_', ' ')))
 
 
