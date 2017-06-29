@@ -7,6 +7,7 @@ This contains:
 
 """
 
+import random
 from pprint import pprint
 import pytest
 import server as weldon
@@ -92,7 +93,13 @@ print('The problem given by the rooter is {}.'.format(problem.title))
 print('Full object given by server:\n', problem, '\n\n', sep='')
 
 
-SOLUTION = """
+BAD_SOLUTION = """
+def revcomp(sequence):
+    complement = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G',
+                  'a': 't', 't': 'a', 'g': 'c', 'c': 'g'}
+    return ''.join(reversed(tuple(complement[letter] for letter in sequence)))
+"""
+GOOD_SOLUTION = """
 def revcomp(sequence):
     complement = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G',
                   'a': 't', 't': 'a', 'g': 'c', 'c': 'g'}
@@ -103,9 +110,14 @@ def revcomp(sequence):
 """
 
 print('I code my solution, and send it to the server using my token.')
-server_answer = server.submit_solution(my_token, problem.id, SOLUTION)
+server_answer = server.submit_solution(my_token, problem.id, BAD_SOLUTION)
 print("Server answers me with a full trace and a dictionnary giving test results:")
 pprint(server_answer.tests)
+print("I can see that my solution do not pass all the tests. I propose another one.")
+server_answer = server.submit_solution(my_token, problem.id, GOOD_SOLUTION)
+print("This time it's ok:")
+pprint(server_answer.tests)
+# print(server_answer.full_trace)
 
 
 print('\n\nI can also send new unit tests.')
@@ -116,6 +128,25 @@ def test_sent_by_lucas():
 
 
 print('\n\nI can send again my solution, to prove that i pass the new test.')
-server_answer = server.submit_solution(my_token, problem.id, SOLUTION)
+server_answer = server.submit_solution(my_token, problem.id, GOOD_SOLUTION)
 print("Server answers me with a full trace and a dictionnary giving test results:")
 pprint(server_answer.tests)
+
+
+print('\n\n\n\n')
+print('#' * 80)
+print('# ROOTER PART II')
+print('#' * 80)
+print('Rooter will close the session, because deadline is met.')
+server.close_problem_session(rooter_token, problem.id)
+print('Rooter will now ask for report about students work.')
+print('Rooter can retrieve students implied in the problem:')
+players = server.retrieve_players_of(rooter_token, problem.id)
+print('\t' + '\n\t'.join(players))
+choosen_player = random.choice(players)
+print('Rooter looks at the progress of student {} by asking a report to the server:'
+      ''.format(choosen_player))
+
+print('\n\n')
+report = server.retrieve_report(choosen_player, problem.id)
+print(report)
