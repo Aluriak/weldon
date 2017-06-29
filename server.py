@@ -8,7 +8,7 @@ import re
 import uuid
 from collections import defaultdict, namedtuple
 
-from test import Test
+from wtest import Test
 from commons import SubmissionResult, ServerError
 from problem import Problem
 from run_pytest import (run_tests_on_problem,

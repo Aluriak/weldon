@@ -3,7 +3,7 @@
 """
 
 import os
-from test import Test
+from wtest import Test
 
 
 class Problem:

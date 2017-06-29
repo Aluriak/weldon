@@ -4,7 +4,7 @@ classes of weldon project.
 """
 
 import json
-from test import Test
+from wtest import Test
 from problem import Problem
 from commons import custom_json_encoder, custom_json_decoder, SubmissionResult
 
