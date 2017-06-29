@@ -8,3 +8,8 @@ web:
 
 server:
 	python3 webserver.py
+
+
+t:tests
+tests:
+	pytest -vv test/
