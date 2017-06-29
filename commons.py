@@ -46,12 +46,13 @@ def custom_json_decoder(classes:[type]):
 
 class SubmissionResult:
     """Object created by the server and returned to the player"""
-    __slots__ = ['_tests', '_full_trace', '_problem_id']
+    __slots__ = ['_tests', '_full_trace', '_problem_id', '_source_code']
 
-    def __init__(self, tests, full_trace, problem_id):
+    def __init__(self, tests, full_trace:str, problem_id, source_code:str):
         self._tests = dict(tests)
         self._full_trace = str(full_trace)
         self._problem_id = int(problem_id)
+        self._source_code = str(source_code)
 
     @property
     def tests(self): return self._tests
@@ -59,6 +60,8 @@ class SubmissionResult:
     def full_trace(self): return self._full_trace
     @property
     def problem_id(self): return self._problem_id
+    @property
+    def source_code(self): return self._source_code
     @property
     def total_success(self): return all(test.succeed for test in self.tests.values())
 
