@@ -56,7 +56,7 @@ print('#' * 80)
 #  that any player can retrieve.
 PLAYER_PASSWORD = 'WOLOLO42'
 server = weldon.Server(player_password=PLAYER_PASSWORD)
-rooter_token = server.register_rooter()
+rooter_token = server.register_rooter('gérard')
 print("Rooter register itself as a rooter, getting (secret) token {}."
       "".format(rooter_token))
 problem = server.register_problem(
