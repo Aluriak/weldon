@@ -20,7 +20,7 @@ def result_from_pytest(problem, source_code, run_dir='./run/',
 
     """
     results = run_tests_on_problem(problem, source_code, run_dir, test_output)
-    return extract_results_from_pytest_output(results, problem.id, source_code)
+    return extract_results_from_pytest_output(results, problem, source_code)
 
 
 def run_tests_on_problem(problem, source_code, run_dir='./run/',
@@ -67,7 +67,7 @@ def run_tests_on_problem(problem, source_code, run_dir='./run/',
     return stdout.decode()
 
 
-def extract_results_from_pytest_output(output:str, problem_id:int,
+def extract_results_from_pytest_output(output:str, problem,
                                        source_code:str) -> SubmissionResult:
     """Return a SubmissionResult instance describing given pytest output"""
     reg_test = re.compile(r'^[\/a-zA-Z_0-9]+test_([hiddenpubliccommunity]+)_cases\.py::test_([a-zA-Z_0-9]+) ([PASSEDFAIL]+)$')
@@ -79,4 +79,4 @@ def extract_results_from_pytest_output(output:str, problem_id:int,
             assert type in TEST_TYPES
             tests.append(TestResult(testname, type, result == 'PASSED'))
     return SubmissionResult(tests=tests, full_trace=str(output),
-                            problem_id=problem_id, source_code=str(source_code))
+                            problem_id=problem.id, source_code=str(source_code))
