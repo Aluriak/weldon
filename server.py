@@ -131,7 +131,8 @@ class Server:
         self.validate_token(token, self.retrieve_report)
         problem = self._get_problem(problem_id)
         player_name = self._players_name[token]
-        report = make_report_on_player(player_name, self._player_submissions(token, problem.id))
+        player_subs = self._player_submissions(token, problem.id)
+        report = make_report_on_player(player_name, token, player_subs, problem)
         return '\n'.join(report)
 
     def retrieve_players_of(self, token:str, problem_id:int or str) -> [str] or ServerError:
