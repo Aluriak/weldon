@@ -64,10 +64,17 @@ that will naturally arise when Weldon will quit the POC stage.
 - [x] management of tests as a list of functions, not a plain string
 - [x] management of tests as a list of complex objects having implementation and author
 - [ ] provides more insight into tests using static analysis (function name, fixtures,…)
+- [ ] human readable serialization of server, so it can be edited and reloaded easily
+- [ ] server configuration by command line or from any rooter account
+- [x] provides way to control student names (could force them to use their official mail)
 - [ ] configuration of testers by problem (how many ? randomly choosen ?).
 - [ ] system to avoid naming collisions leading one player to hide a community test by providing a new test with the same name.
+- [x] perform report for each player, providing him results about number of passed tests (using [bashplotlib](https://github.com/glamp/bashplotlib)) and [pylint](https://pylint.org) rate and messages.
 - [ ] perform post-session report for each player, providing him insight of the data (graphic of number of passing (hidden) test and regression according to time, for instance), and the hidden tests.
 - [ ] perform during-session report for all players, providing insight about best players/testers.
+- [x] allow teachers to know which players are working on a particular problem.
+- [x] allow teachers to access players report.
+- [x] allow teachers to close submissions to a particular problem.
 - [x] allow teachers to add new public and hidden tests.
 - [x] cut this implementation into dedicated files.
 - [ ] perform a real sandboxing to avoid attacks by players on the server (firejail ? apparmor ?).
