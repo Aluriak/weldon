@@ -11,8 +11,7 @@ from collections import defaultdict, namedtuple
 from wtest import Test
 from commons import SubmissionResult, ServerError
 from problem import Problem
-from run_pytest import (run_tests_on_problem,
-                        extract_results_from_pytest_output)
+from run_pytest import result_from_pytest
 
 
 # A valider is a pair (valider function, error message)
@@ -188,8 +187,15 @@ class Server:
         and given submission result.
 
         """
-        Entry = namedtuple('Entry', 'source_code result')
-        self._db[token][result.problem_id].append(Entry(source_code, result))
+        self._db[token][result.problem_id].append(result)
+
+
+    def _player_submissions(self, token:str, problem_id:str) -> [(str, str)]:
+        """Return player sources code and results for given problem"""
+        try:
+            return tuple(self._db[token][problem_id])
+        except IndexError:
+            return ()
 
     def _player_last_submission(self, token:str, problem_id:str) -> (str, str) or None:
         """Return last player source code and results for given problem"""
@@ -202,8 +208,7 @@ class Server:
         """True if player of given token has succeed for all tests"""
         last_sub = self._player_last_submission(token, problem_id)
         if not last_sub: return False  # no submission
-        last_result = last_sub.result
-        return all(test.succeed for test in last_result.tests.values())
+        return all(test.succeed for test in last_sub.tests.values())
 
     def _run_tests_for_player(self, token:str, problem_id:int, source_code:str,
                               *, dry=False) -> SubmissionResult:
@@ -215,8 +220,7 @@ class Server:
         """
         problem = self._get_problem(problem_id)
         problem_id = problem.id
-        test_result = run_tests_on_problem(problem, source_code)
-        result = extract_results_from_pytest_output(test_result, problem_id)
+        result = result_from_pytest(problem, source_code)
         if not dry:
             self._update_player_state(token, source_code, result)
         return result
