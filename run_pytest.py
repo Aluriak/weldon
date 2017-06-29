@@ -13,6 +13,16 @@ import pytest
 from commons import TEST_TYPES, SubmissionResult, TestResult
 
 
+def result_from_pytest(problem, source_code, run_dir='./run/',
+                       test_output:str='./run/test_output') -> SubmissionResult:
+    """Main API: return submission result knowing the problem,
+    the source code and the pytest related parameters
+
+    """
+    results = run_tests_on_problem(problem, source_code, run_dir, test_output)
+    return extract_results_from_pytest_output(results, problem.id, source_code)
+
+
 def run_tests_on_problem(problem, source_code, run_dir='./run/',
                          test_output:str='./run/test_output'):
     """Run problem specs on given source code, in given run_dir.
@@ -57,7 +67,8 @@ def run_tests_on_problem(problem, source_code, run_dir='./run/',
     return stdout.decode()
 
 
-def extract_results_from_pytest_output(output:str, problem_id:int) -> SubmissionResult:
+def extract_results_from_pytest_output(output:str, problem_id:int,
+                                       source_code:str) -> SubmissionResult:
     """Return a SubmissionResult instance describing given pytest output"""
     reg_test = re.compile(r'^[\/a-zA-Z_0-9]+test_([hiddenpubliccommunity]+)_cases\.py::test_([a-zA-Z_0-9]+) ([PASSEDFAIL]+)$')
     tests = {}  # test name: test status
@@ -67,4 +78,5 @@ def extract_results_from_pytest_output(output:str, problem_id:int) -> Submission
             type, testname, result = match.groups()
             assert type in TEST_TYPES
             tests[testname] = TestResult(testname, type, result == 'PASSED')
-    return SubmissionResult(tests=tests, full_trace=str(output), problem_id=problem_id)
+    return SubmissionResult(tests=tests, full_trace=str(output),
+                            problem_id=problem_id, source_code=str(source_code))
