@@ -48,8 +48,8 @@ class SubmissionResult:
     """Object created by the server and returned to the player"""
     __slots__ = ['_tests', '_full_trace', '_problem_id', '_source_code']
 
-    def __init__(self, tests, full_trace:str, problem_id, source_code:str):
-        self._tests = dict(tests)
+    def __init__(self, tests:iter, full_trace:str, problem_id, source_code:str):
+        self._tests = tuple(tests)
         self._full_trace = str(full_trace)
         self._problem_id = int(problem_id)
         self._source_code = str(source_code)
@@ -63,7 +63,7 @@ class SubmissionResult:
     @property
     def source_code(self): return self._source_code
     @property
-    def total_success(self): return all(test.succeed for test in self.tests.values())
+    def total_success(self): return all(test.succeed for test in self.tests)
 
     @property
     def fields(self) -> iter:

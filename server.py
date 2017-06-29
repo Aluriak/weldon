@@ -250,7 +250,7 @@ class Server:
         """True if player of given token has succeed for all tests"""
         last_sub = self._player_last_submission(token, problem_id)
         if not last_sub: return False  # no submission
-        return all(test.succeed for test in last_sub.tests.values())
+        return all(test.succeed for test in last_sub.tests)
 
     def _run_tests_for_player(self, token:str, problem_id:int, source_code:str,
                               *, dry=False) -> SubmissionResult:

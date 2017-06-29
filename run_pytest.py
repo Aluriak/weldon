@@ -71,12 +71,12 @@ def extract_results_from_pytest_output(output:str, problem_id:int,
                                        source_code:str) -> SubmissionResult:
     """Return a SubmissionResult instance describing given pytest output"""
     reg_test = re.compile(r'^[\/a-zA-Z_0-9]+test_([hiddenpubliccommunity]+)_cases\.py::test_([a-zA-Z_0-9]+) ([PASSEDFAIL]+)$')
-    tests = {}  # test name: test status
+    tests = []  # all Test instances
     for line in output.splitlines(keepends=False):
         match = reg_test.match(line)
         if match:
             type, testname, result = match.groups()
             assert type in TEST_TYPES
-            tests[testname] = TestResult(testname, type, result == 'PASSED')
+            tests.append(TestResult(testname, type, result == 'PASSED'))
     return SubmissionResult(tests=tests, full_trace=str(output),
                             problem_id=problem_id, source_code=str(source_code))
