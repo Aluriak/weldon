@@ -38,6 +38,8 @@ class Problem:
     @property
     def community_tests(self): return tuple(self._community_tests)
     @property
+    def tests(self): return self.public_tests + self.hidden_tests + self.community_tests
+    @property
     def author(self): return self._author
     @property
     def source_name(self): return self._source_name
