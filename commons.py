@@ -10,6 +10,11 @@ TEST_TYPES = {'hidden', 'public', 'community'}
 TestResult = namedtuple('TestResult', 'name type succeed')
 
 
+class ServerError(Exception):
+    """Raised by Server when players are using the service badly"""
+    pass
+
+
 def custom_json_encoder(cls:type or [type]) -> json.JSONEncoder:
     """Return a class ready to be used by json module to encode given
     class(es) of custom objects.
