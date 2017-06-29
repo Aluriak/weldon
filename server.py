@@ -15,10 +15,32 @@ from run_pytest import (run_tests_on_problem,
                         extract_results_from_pytest_output)
 
 
+# A valider is a pair (valider function, error message)
+DEFAULT_VALIDER = (lambda _: True, "Default valider is bugged")  # always ok by default
+NAME_MAIL_VALIDER = (
+    lambda x: bool(re.fullmatch(r'[a-zA-Z0-9\.-]+@[a-zA-Z0-9\.-]+\.[a-z]+', x)),
+    "Name must be an email adress ; Note that the regex for mail address "
+    "detection is probably not exhaustive"
+)
+
+
 class Server:
     """Object that host problems and receive and test submissions"""
 
-    def __init__(self, player_password='', rooter_password=''):
+    def __init__(self, player_password='', rooter_password='',
+                 player_name_valider:(callable, str)=DEFAULT_VALIDER,
+                 rooter_name_valider:(callable, str)=DEFAULT_VALIDER):
+        """
+        password -- the password expected to register.
+        name_valider -- map name to boolean. If true, registration is accepted.
+
+        The name valider is here to enforce players or rooters to adopt a
+        particular naming scheme, that could be anything, like an email adress
+        (see NAME_MAIL_VALIDER for this particular case).
+
+        """
+        self._player_name_valider = player_name_valider
+        self._rooter_name_valider = rooter_name_valider
         self.problems = {}  # id or name: Problem instance
         self._next_problem_id = 1
         self.rooter_password = str(rooter_password)
@@ -32,10 +54,15 @@ class Server:
 
     def register_player(self, name:str, password:str='') -> str:
         if password == self.player_password:
+            valider, err = self._player_name_valider
+            if not valider(name):
+                raise ServerError('Bad name: ' + str(err))
             new = str(uuid.uuid4())
             self.tokens_player.add(new)
-            self._players_name[new] = str(l for l in name if re.match(r'[a-zA-Z_0-9]', l))
+            self._players_name[new] = str(name)
             return new
+        else:
+            raise ServerError('Registration failed: bad password.')
 
     def register_rooter(self, name:str, password:str='') -> str:
         if password == self.rooter_password:
