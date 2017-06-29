@@ -8,6 +8,7 @@ import re
 import uuid
 from collections import defaultdict, namedtuple
 
+from test import Test
 from commons import SubmissionResult, ServerError
 from problem import Problem
 from run_pytest import (run_tests_on_problem,
@@ -101,7 +102,14 @@ class Server:
         """
         self.validate_token(token, self.submit_test)
         problem = self._get_problem(problem_id)
-        if not self._test_upload_allowed(token, problem_id):
+        self.validate_test(token, test_code, problem.id)
+        problem.add_community_test(Test(str(test_code), token))
+
+
+    def validate_test(self, token:str, test_code, problem_id) -> ServerError or None:
+        """Raise ServerError if anything goes wrong."""
+        problem = self._get_problem(problem_id)
+        if not self._test_upload_allowed(token, problem.id):
             raise ServerError("Given token's last submission did not succeed all tests")
 
         # verify that player succeeds on this new test
@@ -185,3 +193,24 @@ class Server:
         if not dry:
             self._update_player_state(token, source_code, result)
         return result
+
+    def _players_submit_solution_for(self, problem_id:str) -> iter:
+        """Yield token of players that have submitted code to given problem."""
+        problem_id = self._get_problem(problem_id).id
+        yield from (
+            token for token, problem_ids in self._db.items()
+            if problem_id in problem_ids
+        )
+
+    def _players_submit_test_for(self, problem_id:str) -> iter:
+        """Yield token of players that have submitted test to given problem."""
+        problem = self._get_problem(problem_id)
+        yield from (test.author for test in problem.community_tests)
+
+    def _players_involved_in(self, problem_id:str) -> frozenset:
+        """Return set of token of players that have participated to given problem,
+        by submitting code or tests.
+        """
+        coders = self._players_submit_solution_for(problem_id)
+        testers = self._players_submit_test_for(problem_id)
+        return frozenset(coders) | frozenset(testers)
