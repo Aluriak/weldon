@@ -24,7 +24,11 @@ def send(function:str, *args:str, **kwargs:str):
     data = wjson.from_json(received)
     s.close()
 
-    return data
+    if data['status'] == 'failed':
+        print('ServerError:', data['payload'])
+        exit(1)
+    else:
+        return data['payload']
 
 
 DESCRIPTION = """Writing in a module *revcomp.py* a function *revcomp*

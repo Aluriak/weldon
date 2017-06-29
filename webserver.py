@@ -9,6 +9,7 @@ import socketserver
 
 import wjson
 import server as weldon
+from commons import ServerError
 
 
 PORT = 6519
@@ -49,10 +50,17 @@ class WebInterface:
         """Handle given data, return the data to return"""
         command, args, kwargs = wjson.from_json(data)
         if command in self._server_methods:
-            ret = getattr(self.server, command)(*args, **kwargs)
-            sent = wjson.as_json(ret)
+            try:
+                data = {
+                    'status': 'success',
+                    'payload': getattr(self.server, command)(*args, **kwargs)
+                }
+            except ServerError as err:
+                print('ServerError:', '|'.join(map(str, err.args)))
+                data = {'status': 'failed', 'payload': err.args[0]}
+            sent = wjson.as_json(data)
             return sent
-        return '{"NOPE": "Invalid command"}'
+        return '{"status":"failed","payload":"Invalid command."}'
 
 
 
