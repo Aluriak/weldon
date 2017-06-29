@@ -18,11 +18,12 @@ class Problem:
         self._id = int(id)
         self._title = str(title)
         self._description = str(description)
-        self._public_tests = Test.to_test_suite(public_tests)
-        self._hidden_tests = Test.to_test_suite(hidden_tests)
-        self._community_tests = Test.to_test_suite(community_tests)
-        self._source_name = str(source_name or 'problem{}'.format(self.id))
         self._author = str(author or 'unknow')
+        self._source_name = str(source_name or 'problem{}'.format(self.id))
+
+        self._public_tests = Test.to_test_suite(public_tests, author=self._author, type='public')
+        self._hidden_tests = Test.to_test_suite(hidden_tests, author=self._author, type='hidden')
+        self._community_tests = Test.to_test_suite(community_tests, author=self._author, type='community')
 
     @property
     def id(self): return self._id
@@ -46,14 +47,20 @@ class Problem:
         yield from (field.lstrip('_') for field in self.__slots__)
 
 
-    def add_public_test(self, test:str):
+    def add_public_test(self, test:Test):
         """Add a single test to public tests"""
+        assert isinstance(test, Test)
+        assert test.type == 'public'
         self._public_tests += (test,)
-    def add_hidden_test(self, test:str):
+    def add_hidden_test(self, test:Test):
         """Add a single test to hidden tests"""
+        assert isinstance(test, Test)
+        assert test.type == 'hidden'
         self._hidden_tests += (test,)
-    def add_community_test(self, test:str):
+    def add_community_test(self, test:Test):
         """Add a single test to community tests"""
+        assert isinstance(test, Test)
+        assert test.type == 'community'
         self._community_tests += (test,)
 
 
