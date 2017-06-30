@@ -99,3 +99,11 @@ class Problem:
         payload = data.get('__weldon_Problem__')
         if payload:
             return Problem(**payload)
+
+
+    def __str__(self) -> str:
+        return ("<Problem '{}', providing {} public, {} hidden"
+                " and {} community tests>"
+                "".format(self.title, len(self.public_tests),
+                          len(self.hidden_tests), len(self.community_tests)))
+
