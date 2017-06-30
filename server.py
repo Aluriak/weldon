@@ -6,6 +6,8 @@
 import os
 import re
 import uuid
+import inspect
+import functools
 from collections import defaultdict, namedtuple
 
 from wtest import Test
@@ -22,6 +24,30 @@ NAME_MAIL_VALIDER = (
     "Name must be an email adress ; Note that the regex for mail address "
     "detection is probably not exhaustive"
 )
+
+
+def api_method(func:callable) -> callable:
+    """Decorator around method callable by Server API.
+
+    If decorated func have a `token` parameter, it will first be validated
+    (by verifying it is valid for given operation)
+
+    Also, functions wrapped will get a marker allowing server instances
+    to know which functions belongs to the API.
+
+    """
+    formal_parameters = frozenset(inspect.signature(func).parameters.keys())
+    have_token = 'token' in formal_parameters
+    if 'token' in formal_parameters:
+        # method is wrapped to automatically provide token validation
+        @functools.wraps(func)
+        def decorator(self, token, *args, **kwargs):
+            self._validate_token(token, getattr(self, func.__name__))
+            return func(self, token, *args, **kwargs)
+    else:  # method is not wrapped (nothing to do)
+        decorator = func
+    decorator.belong_to_server_api = True  # marker
+    return decorator
 
 
 class Server:
@@ -55,6 +81,21 @@ class Server:
         self._db = defaultdict(lambda: defaultdict(list))  # token: {problem_id: [data]}
         self._players_name = {}  # token: name
 
+
+    @property
+    def api_methods(self) -> {callable: bool}:
+        """Return map of methods of server that belongs to the API with
+        a boolean indicating if it needs root to be used.
+
+        """
+        return {
+            func: func in self.restricted_to_rooter
+            for _, func in inspect.getmembers(self, predicate=inspect.ismethod)
+            if callable(func) and getattr(func, 'belong_to_server_api', False)
+        }
+
+
+    @api_method
     def register_player(self, name:str, password:str='') -> str:
         if password == self.player_password:
             valider, err = self._player_name_valider
@@ -67,6 +108,7 @@ class Server:
         else:
             raise ServerError('Registration failed: bad password.')
 
+    @api_method
     def register_rooter(self, name:str, password:str='') -> str:
         if password == self.rooter_password:
             new = str(uuid.uuid4())
@@ -74,13 +116,13 @@ class Server:
             self._players_name[new] = str(l for l in name if re.match(r'[a-zA-Z_0-9]', l))
             return new
 
+    @api_method
     def register_problem(self, token:str, title:str, description:str,
                          public_tests:str, hidden_tests:str) -> id:
         """Register a new problem with given description and tests,
         and open its session.
 
         """
-        self.validate_token(token, self.register_problem)
         problem = Problem(self._yield_problem_id(), title, description,
                           public_tests, hidden_tests, author=token)
         self.problems[problem.id] = problem
@@ -101,14 +143,17 @@ class Server:
             raise ServerError("Problem {} do not exists".format(problem_id))
         return problem
 
+    @api_method
     def retrieve_problem(self, token:str, problem_id:int or str) -> Problem or ServerError:
         """Return problem of given id or name ; raise ServerError if no problem"""
-        self.validate_token(token, self.retrieve_problem)
-        return self._get_problem(problem_id)
+        if token in self.tokens_rooter:
+            return self._get_problem(problem_id)
+        elif token in self.tokens_player:
+            return self._get_problem(problem_id).as_public_data()
 
+    @api_method
     def retrieve_public_problem(self, token:str, problem_id:str) -> Problem or ServerError:
         """If token is allowed to, return the public version of wanted problem"""
-        self.validate_token(token, self.retrieve_public_problem)
         return self._get_problem(problem_id).as_public_data()
 
     def _yield_problem_id(self):
@@ -116,9 +161,9 @@ class Server:
         self._next_problem_id += 1
         return self._next_problem_id - 1
 
+    @api_method
     def close_problem_session(self, token:str, problem_id:int or str) -> None or ServerError:
         """Remove given problem of the list of open problems"""
-        self.validate_token(token, self.close_problem_session)
         problem = self._get_problem(problem_id)
         try:
             self.open_problems.remove(problem.id)
@@ -126,15 +171,16 @@ class Server:
             raise ServerError("Given problem ({}) is already closed".format(problem.title))
 
 
+    @api_method
     def retrieve_report(self, token:str, problem_id:int or str) -> str or ServerError:
         """Return A full report about given token activity of given problem"""
-        self.validate_token(token, self.retrieve_report)
         problem = self._get_problem(problem_id)
         player_name = self._players_name[token]
         player_subs = self._player_submissions(token, problem.id)
         report = make_report_on_player(player_name, token, player_subs, problem)
         return '\n'.join(report)
 
+    @api_method
     def retrieve_players_of(self, token:str, problem_id:int or str) -> [str] or ServerError:
         """Return tokens of players associated to given problem
 
@@ -147,11 +193,11 @@ class Server:
         to use all different names.
 
         """
-        self.validate_token(token, self.retrieve_players_of)
         problem = self._get_problem(problem_id)
         return tuple(self._players_involved_in(problem.id))
 
 
+    @api_method
     def submit_solution(self, token:str, problem_id:int, source_code:str) -> ServerError or SubmissionResult:
         """Run unit tests for given problem using given solution.
 
@@ -162,14 +208,13 @@ class Server:
         Raise ServerError if problem_id is not valid, or a SubmissionResult object.
 
         """
-        self.validate_token(token, self.submit_solution)
         return self._run_tests_for_player(token, problem_id, source_code)
 
 
+    @api_method
     def submit_test(self, token:str, problem_id:int, test_code:str) -> ServerError or None:
         """
         """
-        self.validate_token(token, self.submit_test)
         problem = self._get_problem(problem_id)
         self.validate_test(token, test_code, problem.id)
         problem.add_community_test(Test(str(test_code), token, 'community'))
@@ -190,15 +235,15 @@ class Server:
             raise ServerError("Given test fail on last submission")
 
 
+    @api_method
     def add_public_test(self, token:str, problem_id:int, test_code:str) -> ServerError or None:
         """Add given test to the set of public tests of given problem"""
-        self.validate_token(token, self.add_public_test)
         problem = self._get_problem(problem_id)
         problem.add_public_test(Test(str(test_code), token, 'public'))
 
+    @api_method
     def add_hidden_test(self, token:str, problem_id:int, test_code:str) -> ServerError or None:
         """Add given test to the set of hidden tests of given problem"""
-        self.validate_token(token, self.add_hidden_test)
         problem = self._get_problem(problem_id)
         problem.add_hidden_test(Test(str(test_code), token, 'hidden'))
 
@@ -211,7 +256,7 @@ class Server:
         return False
 
 
-    def validate_token(self, token:str, method:callable) -> ServerError or None:
+    def _validate_token(self, token:str, method:callable=None) -> ServerError or None:
         """Raise an error if given token do not have access to given method"""
         rooter = token in self.tokens_rooter
         player = token in self.tokens_player
@@ -221,8 +266,9 @@ class Server:
                              "".format(token))
         if not rooter and need_rooter:
             error_msg = lambda func: func
+            method_name = method.__name__.replace('_', ' ')
             raise ServerError("Given token is not allowed to {}"
-                             "".format(method.__name__.replace('_', ' ')))
+                             "".format(method_name))
 
 
     def _update_player_state(self, token:str, source_code:str, result:SubmissionResult):
