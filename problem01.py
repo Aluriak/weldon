@@ -11,6 +11,7 @@ import random
 from pprint import pprint
 import pytest
 import server as weldon
+from commons import ServerError
 
 
 def test_story_problem01():
@@ -74,7 +75,7 @@ def test_story_problem01():
     print("This time it's ok:")
     pprint(server_answer.tests)
     # print(server_answer.full_trace)
-    assert all(server_answer.tests.values())
+    assert all(test.succeed for test in server_answer.tests)
 
     print('\n\nI can also send new unit tests.')
     server.submit_test(my_token, problem.id, NEW_UNIT_TEST)
@@ -84,7 +85,7 @@ def test_story_problem01():
     server_answer = server.submit_solution(my_token, problem.id, GOOD_SOLUTION)
     print("Server answers me with a full trace and a dictionnary giving test results:")
     pprint(server_answer.tests)
-    assert all(server_answer.tests.values())
+    assert all(test.succeed for test in server_answer.tests)
 
 
     print('\n\n\n\n')
