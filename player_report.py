@@ -19,14 +19,22 @@ from bashplotlib.histogram import plot_hist
 MAX_PLOT_HEIGHT = 20
 
 
+def __transform_data(data:list) -> list:
+    """Data transformation based on count. Needed for bashplotlib.
+
+    >>> __transform_data((1, 2, 4, 3))
+    (0, 1, 1, 2, 2, 2, 2, 3, 3, 3)
+
+    """
+    return tuple(chain.from_iterable((
+        ([time] * nb_test)  # the value at x-axis must appears nb_test time in data
+        for time, nb_test in enumerate(data)
+    )))
+
+
 def plot_passed_tests(number_of_passed_test:iter) -> str:
     # get timeline data in term of unique observation.
-    #  in: [1, 2, 4, 3]
-    # out: [1, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4]
-    data = tuple(chain.from_iterable((
-        ([time] * nb_test)  # the value at x-axis must appears nb_test time in data
-        for time, nb_test in enumerate(number_of_passed_test)
-    )))
+    data = __transform_data(number_of_passed_test)
 
     # limit plot size
     hist_height = max(number_of_passed_test)
