@@ -25,8 +25,7 @@ class WebInterface:
         self._port = int(port)
         self._buffer_size = int(buffer_size)
         self._continue = True
-        self._server_methods = frozenset(attr for attr in dir(self.server)
-                                         if not attr.startswith('_'))
+        self._server_methods = dict(self.server.api_methods())
 
     def run(self):
         class TCPHandler(socketserver.StreamRequestHandler):
