@@ -113,3 +113,24 @@ Cons: not fully secure
 
 ### apparmor
 [archlinux doc](https://wiki.archlinux.org/index.php/AppArmor)
+
+
+## AST introspection
+Used to quickly discard some codes for community tests.
+
+Over the long-term, could be used to detect missing functions into the
+submitted code, or unexpected behavior of the code itself
+(access to some libraries like `importlib`, usage of particular builtins like `globals`).
+
+Currently, the community tests, at submission, are tested in the following way:
+- it must have a correct syntax.
+- it must have only one function, eventually decorated.
+- function name must starts with `test_`.
+- it must hold at least one assert or one call to pytest.
+- it must not take any parameter.
+- it must not import some modules (shutil and importlib for instance)
+- it must not use some builtins (locals and globals for instance)
+
+These restrictions are somehow violent, because they prevent users to use
+pytest fixtures system, and not enough against a really motivated attacker.
+All these verifications are deactivable if necessary.
