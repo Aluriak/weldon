@@ -74,7 +74,7 @@ class Server:
         self.player_password = str(player_password)
         self.tokens_player = set()
         self.tokens_rooter = set()
-        self.restricted_to_rooter = {self.register_problem, self.retrieve_problem,
+        self.restricted_to_rooter = {self.register_problem,
                                      self.add_hidden_test, self.add_public_test,
                                      self.close_problem_session,
                                      self.retrieve_players_of}
@@ -82,18 +82,41 @@ class Server:
         self._players_name = {}  # token: name
 
 
-    @property
-    def api_methods(self) -> {callable: bool}:
+    # @property
+    def api_methods(self) -> {str: bool}:
         """Return map of methods of server that belongs to the API with
         a boolean indicating if it needs root to be used.
 
         """
         return {
-            func: func in self.restricted_to_rooter
+            func.__name__: func in self.restricted_to_rooter
             for _, func in inspect.getmembers(self, predicate=inspect.ismethod)
             if callable(func) and getattr(func, 'belong_to_server_api', False)
         }
 
+    def api_methods_parameters(self) -> {str: (str,)}:
+        """Return map of methods of server that belongs to the API with
+        an iterable of the parameters name.
+
+        """
+        return {
+            funcname: tuple(inspect.signature(getattr(self, funcname)).parameters.keys())
+            for funcname in self.api_methods()
+        }
+
+
+    @api_method
+    def get_api(self, token:str) -> {callable: {str,}}:
+        """Return the available functions and their arguments as a dict.
+
+        Will filter out reserved to root methods if caller is not one of them.
+
+        """
+        if token in self.tokens_rooter:
+            return self.api_methods_parameters()
+        return {name: params for name, params
+                in self.api_methods_parameters().items()
+                if not getattr(self, name) in self.restricted_to_rooter}
 
     @api_method
     def register_player(self, name:str, password:str='') -> str:
