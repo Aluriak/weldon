@@ -12,4 +12,4 @@ server:
 
 t:tests
 tests:
-	pytest -vv --doctest-module --ignore=venv/ --ignore=run --ignore=run.backup --ignore=crypto.py --ignore="problem*.py" --ignore=webclient.py
+	pytest -vv --doctest-module --ignore=venv/ --ignore=run --ignore=run.backup --ignore=crypto.py --ignore=problem01_remote.py
