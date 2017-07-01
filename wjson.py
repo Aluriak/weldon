@@ -6,10 +6,11 @@ classes of weldon project.
 import json
 from wtest import Test
 from problem import Problem
-from commons import custom_json_encoder, custom_json_decoder, SubmissionResult
+from commons import SubmissionResult, TestResult
+from utils import custom_json_encoder, custom_json_decoder
 
 
-SERIALIZABLE_CLASSES = (Problem, Test, SubmissionResult)
+SERIALIZABLE_CLASSES = (Problem, Test, SubmissionResult, TestResult)
 
 
 def from_json(payload:str) -> object or list or dict:
