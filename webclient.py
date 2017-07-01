@@ -9,9 +9,14 @@ from webserver import PORT as TCP_PORT, BUFFER_SIZE
 
 TCP_IP = '127.0.0.1'
 
+def __faild_on(payload):
+    """Default failure handler when received data is in fail state"""
+    print('ServerError:', payload)
+    exit(1)
 
 def send(function:str, *args:str, tcp_port:int=TCP_PORT,
-         buffer_size:int=BUFFER_SIZE, host:str=TCP_IP, **kwargs):
+         buffer_size:int=BUFFER_SIZE, host:str=TCP_IP,
+         failed_on=__faild_on, **kwargs):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, tcp_port))
     payload = wjson.as_json((function, tuple(args), dict(kwargs))).encode()
@@ -26,8 +31,7 @@ def send(function:str, *args:str, tcp_port:int=TCP_PORT,
     s.close()
 
     if data['status'] == 'failed':
-        print('ServerError:', data['payload'])
-        exit(1)
+        failed_on(data['payload'])
     else:
         return data['payload']
 
