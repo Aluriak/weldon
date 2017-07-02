@@ -156,8 +156,8 @@ class Server:
 
         """
         if title in self.problems:
-            author = self._players_name(self.problems[title].author)
-            if self._players_name(token) == author:
+            author = self._players_name.get(self.problems[title].author, None)
+            if self._players_name[token] == author:
                 raise ServerError(f"You already submited a problem of title '{title}'")
             raise ServerError(f"{author} already submited a problem of title '{title}'")
         problem = Problem(self._yield_problem_id(), title, description,
