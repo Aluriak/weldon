@@ -86,11 +86,11 @@ try:
     )
     print('Problem registered as', problem.title)
 except ServerError as e:
-    # NOTE: you can override Send internals params during call
+    # NOTE: you can override internals params during call, or…
     problem = root_conn.retrieve_problem(problem_id='problem01')
-    root_conn.problem_id = 'problem01'  # or set them for later calls
-    root_conn.open_problem_session()
-    print('Problem already registered registered as', problem.title)
+root_conn.problem_id = 'problem01'  # … set them for later calls
+root_conn.open_problem_session()
+print('Problem already registered registered as', problem.title)
 
 
 PLAYER_PASSWORD = 'WOLOLO42'
