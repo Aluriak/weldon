@@ -143,6 +143,10 @@ class Server:
     def register_rooter(self, name:str, password:str='') -> str:
         return self._register_user(name, password, root=True)
 
+    @api_method
+    def list_problems(self, token:str) -> [id]:
+        """Return all problem id available on this server"""
+        return tuple(self.problems.keys())
 
     @api_method
     def register_problem(self, token:str, title:str, description:str,
