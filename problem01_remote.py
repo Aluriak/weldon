@@ -5,6 +5,7 @@ from pprint import pprint
 
 from webserver import PORT as TCP_PORT, BUFFER_SIZE
 from webclient import Send
+from commons import ServerError
 
 
 DESCRIPTION = """Writing in a module *revcomp.py* a function *revcomp*
@@ -76,13 +77,21 @@ print("Rooter register itself as a rooter, getting (secret) token '{}'."
       "".format(root_conn.token))
 
 print("Rooter, using (secret) token, create a new problem on the server.")
-problem = root_conn.register_problem(
-    'problem01',
-    DESCRIPTION,
-    public_tests=PUBLIC_TESTS,
-    hidden_tests=HIDDEN_TESTS,
-)
-print('Problem registered as', problem.title)
+try:
+    problem = root_conn.register_problem(
+        'problem01',
+        DESCRIPTION,
+        public_tests=PUBLIC_TESTS,
+        hidden_tests=HIDDEN_TESTS,
+    )
+    print('Problem registered as', problem.title)
+except ServerError as e:
+    # NOTE: you can override Send internals params during call
+    problem = root_conn.retrieve_problem(problem_id='problem01')
+    root_conn.problem_id = 'problem01'  # or set them for later calls
+    root_conn.open_problem_session()
+    print('Problem already registered registered as', problem.title)
+
 
 PLAYER_PASSWORD = 'WOLOLO42'
 print("Rooter gives to the player the password '{}', to use to register."
@@ -107,19 +116,19 @@ print('The problem given by the rooter is {}.'.format(problem.title))
 print('Full object given by server:\n', problem, '\n\n', sep='')
 
 print("\nNote that, as a player, i can't submit new problems.")
-# Also, the Send object do not provide non-accessible API.
-#  so, we have to bypass it to perform the problem registering.
+# Also, the Send object do not provide non-accessible API
+#  (for instance, register_problem when player is not root).
+#  So, we have to bypass it to perform the problem registering.
+#  Note that server will detect the fault and return an error.
 try:
-    have_failed = False
-    def failed_on(payload):  raise ValueError()
     conn._send(
         'register_problem', token=conn.token, title='title',
         description='description', public_tests='tests',
-        hidden_tests='tests', failed_on=failed_on
+        hidden_tests='tests'
     )
     assert False, "Call to 'register_problem' as a student did not raise any error."
-except ValueError:
-    pass
+except ServerError:
+    print("I tested, and server detected the fault")
 
 print('I code my solution, and send it to the server using my token.')
 server_answer = conn.submit_solution(BAD_SOLUTION)
@@ -174,5 +183,5 @@ print('Rooter looks at the progress of student {} by asking a report to the serv
       ''.format(choosen_player))
 
 print('\n\n')
-report = server.retrieve_report(choosen_player)
+report = root_conn.retrieve_report(token=choosen_player)
 print(report)
