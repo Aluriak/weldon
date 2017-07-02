@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import filedialog, simpledialog, font
 
 from webclient import Send as Client
+from commons import ServerError
 
 
 TK_ROW_INFO = 1
@@ -19,7 +20,7 @@ COLOR_UNSET = 'pink'
 COLOR_ERR = 'red'
 COLOR_LOG = 'dark green'
 COLOR_OK = 'light green'
-COLOR_WAITING = 'light yellow'
+COLOR_WAITING = 'yellow'
 
 DEFAULT_SERVER_CONFIG = {'host': '127.0.0.1', 'port': '6700',
                          'name': '', 'password': '', 'root': False}
@@ -29,12 +30,15 @@ DEFAULT_SERVER_CONFIG = {'host': '127.0.0.1', 'port': PORT,
 SERVER_CONFIG_ORDER = ('name', 'password', 'host', 'port', 'root')
 
 
-"""
+# """
+try:
     from populate_server import populate
     conn = Client('SHUBISHI', name='populate3', root=True, port=PORT, host='127.0.0.1')
     print(conn)
     populate(conn)
     del conn
+except ServerError as e:
+    print('ServerError:', e.args[0])
 """#"""
 
 
@@ -152,6 +156,9 @@ class WeldonInterface(tk.Frame):
         self._server_config = DEFAULT_SERVER_CONFIG
         self.configure_server(can_cancel=False)
 
+        # Data holders
+        self._source_file = None
+        self._source_file_lasttime = 0  # last time of modification of the file
 
     def _connected_to_server(self) -> bool:
         return bool(self.client)
@@ -191,7 +198,7 @@ class WeldonInterface(tk.Frame):
 
         error_font = font.Font(family='Helvetica', size=10, weight='bold')
         self.current_error = tk.StringVar(value=' ' * 40)
-        self.lab_error = tk.Label(parent, textvariable=self.current_error, fg=COLOR_ERR, height=1, font=error_font)
+        self.lab_error = tk.Label(parent, textvariable=self.current_error, fg=COLOR_ERR, bg=NO_COLOR, height=1, font=error_font)
         self.lab_error.grid(row=TK_ROW_FOOTER, column=0, sticky=tk.W, columnspan=8)
 
 
@@ -212,8 +219,12 @@ class WeldonInterface(tk.Frame):
     def __create_test_result_widget(self, test_name, test_type, test_success) -> tk.Label:
         pass
 
-    def __handle_submission_result(self, result):
-        print(result)
+    def __handle_submission_result(self, results):
+        nb_tests = sum(1 for test in results.tests)
+        nb_succeed_tests = sum(1 for test in results.tests if test.succeed)
+        self.log(f'Submission done. {nb_succeed_tests}/{nb_tests} tests succeed.')
+
+        # print(results)
 
 
     def find_source_code(self):
@@ -222,9 +233,10 @@ class WeldonInterface(tk.Frame):
             initialdir=os.getcwd(),
         )
         if filedesc:
-            self._source_file = os.path.split(str(filedesc.name))[1]
-            self._source_code = ''.join(filedesc)
-            self.but_sourcefile.configure(text=self._source_file, bg=COLOR_OK)
+            self._source_file = filedesc.name
+            self._source_file_lasttime = 0  # will be set correctly after submission
+            basename = os.path.split(str(filedesc.name))[1]
+            self.but_sourcefile.configure(text=basename, bg=COLOR_OK)
 
 
     def confirm_close(self):
@@ -257,25 +269,27 @@ class WeldonInterface(tk.Frame):
             self.err('Connection refused. Maybe a bad host or port ?')
 
 
-    def update_problems_list(self):
-        """Retrieve problems from the server, then update the list of problems
-        accordingly.
-
-        """
-        # self.lst_problems.delete(0)
-        # for idx, problem in enumerate(self.client.list_problems()):
-            # self.lst_problems.insert(idx, problem)
-
-        # try:  # first try the new way
-            # self.lst_problems_text.trace_add("write", gen_callback(self.lst_problems, {}, self.lst_problems_text))
-        # except AttributeError:  # then the deprecated one
-            # value_holder.trace("w", gen_callback(self.lst_problems, {}, value_holder))
-
-
     def ask_report(self):
-        print('REPORT')
+        if self.__validate_current_state(validate_code=False):
+            try:
+                print(self.client.retrieve_report(problem_id=self.lst_problems_text.get()))
+            except ServerError as e:
+                self.err(e.args[0])
 
     def submit(self):
+        self.info('Submission…')
+        if self.__validate_current_state():
+            self.client.problem_id = self.lst_problems_text.get()
+            with open(self._source_file) as fd:
+                source_code = fd.read()
+            submission_result = self.client.submit_solution(source_code)
+            # avoid two consecutive submissions on the same source code
+            self._source_file_lasttime = os.path.getmtime(self._source_file)
+            # finally handle the server answer
+            self.__handle_submission_result(submission_result)
+
+
+    def __validate_current_state(self, validate_code=True) -> bool:
         if not self._connected_to_server():
             self.err("Can't submit: not connected to server")
             self.but_server.configure(bg=COLOR_ERR)
@@ -285,23 +299,34 @@ class WeldonInterface(tk.Frame):
         elif self.lst_problems_text.get() not in self.available_problems:
             self.err("Can't submit: Given problem not known")
             self.lst_problems.configure(bg=COLOR_ERR)
-        elif not self._source_file:
+        elif validate_code and not self._source_file:
             self.err("Can't submit: source code not given")
             self.but_sourcefile.configure(bg=COLOR_ERR)
-        else:  # no problem: we can send
-            self.client.problem_id = self.lst_problems_text.get()
-            submission_result = self.client.submit_solution(self._source_code)
-            self.__handle_submission_result(submission_result)
+        elif validate_code and os.path.getmtime(self._source_file) == self._source_file_lasttime:
+            self.err("Can't submit: source code not changed since last submission.")
+        else:  # no problem: we are ready to speak with the server
+            return True
+        return False  # their is at least one problem
+
+
 
     def err(self, msg:str):
         """Report given error message to user"""
         self.lab_error.configure(fg=COLOR_ERR)
         self.current_error.set(str(msg))
+        self.update_idletasks()  # redraw (do not wait for the end of event handling)
 
     def log(self, msg:str):
         """Report given log message to user"""
         self.lab_error.configure(fg=COLOR_LOG)
         self.current_error.set(str(msg))
+        self.update_idletasks()
+
+    def info(self, msg:str):
+        """Report given log message to user"""
+        self.lab_error.configure(fg=COLOR_WAITING)
+        self.current_error.set(str(msg))
+        self.update_idletasks()
 
 
 if __name__ == "__main__":
