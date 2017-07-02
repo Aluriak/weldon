@@ -2,6 +2,7 @@
 import textwrap
 import pytest
 from ast_analysis import introspect_test_function
+from commons import SourceError
 
 
 def test_ok():
@@ -20,7 +21,7 @@ def test_ok():
     """
     )))
     for func in funcs:
-        assert introspect_test_function(func) is None
+        assert introspect_test_function(func) == ('test_foo',)
 
 
 def test_bad_name():
@@ -28,9 +29,9 @@ def test_bad_name():
     def foo():
         assert True
     """)
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(SourceError) as exc:
         introspect_test_function(func, name_starts_with='hello')
-    assert exc.exconly() == "ValueError: Function 'foo' name do not start by hello."
+    assert exc.exconly() == "commons.SourceError: Function 'foo' name do not start by hello."
 
 
 def test_have_assert():
@@ -39,7 +40,7 @@ def test_have_assert():
         def infoo():
             assert False
     """)
-    assert introspect_test_function(func) is None
+    assert introspect_test_function(func) == ('test_foo',)
 
 
 def test_have_pytest_raises():
@@ -49,7 +50,7 @@ def test_have_pytest_raises():
             with pytest.raises(ValueError):
                 pass
     """)
-    assert introspect_test_function(func) is None
+    assert introspect_test_function(func) == ('test_foo',)
 
 
 def test_have_not_pytest_raises():
@@ -58,9 +59,9 @@ def test_have_not_pytest_raises():
         def infoo():
             pytest
     """)
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(SourceError) as exc:
         introspect_test_function(func)
-    assert exc.exconly() == "ValueError: Function 'test_foo' must use/raise AssertionError or pytest & raises."
+    assert exc.exconly() == "commons.SourceError: Function 'test_foo' must use/raise AssertionError or pytest & raises."
 
 
 def test_have_no_assert_or_pytest_raises():
@@ -69,9 +70,9 @@ def test_have_no_assert_or_pytest_raises():
         def infoo():
             pass
     """)
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(SourceError) as exc:
         introspect_test_function(func, must_have_one_of=({'AssertionError'},))
-    assert exc.exconly() == "ValueError: Function 'test_foo' must use/raise AssertionError."
+    assert exc.exconly() == "commons.SourceError: Function 'test_foo' must use/raise AssertionError."
 
 
 def test_prohibited_modules():
@@ -81,9 +82,9 @@ def test_prohibited_modules():
             with pytest.raises(ValueError):
                 import importlib
     """)
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(SourceError) as exc:
         introspect_test_function(func, prohibited_modules=('importlib',))
-    assert exc.exconly() == "ValueError: Function 'test_foo' must not use modules importlib."
+    assert exc.exconly() == "commons.SourceError: Function 'test_foo' must not use modules importlib."
 
 
 def test_prohibited_builtins():
@@ -93,9 +94,9 @@ def test_prohibited_builtins():
             globals()
         assert False
     """)
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(SourceError) as exc:
         introspect_test_function(func, prohibited_builtins=('globals',))
-    assert exc.exconly() == "ValueError: Function 'test_foo' must not use builtins globals."
+    assert exc.exconly() == "commons.SourceError: Function 'test_foo' must not use builtins globals."
 
 
 def test_compilation_error_indent_1():
@@ -104,9 +105,9 @@ def test_compilation_error_indent_1():
         pass
             pass
     """)
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(SourceError) as exc:
         introspect_test_function(func)
-    assert exc.exconly() == "ValueError: Function compilation went bad because of unexpected indent at line 4."
+    assert exc.exconly() == "commons.SourceError: Function compilation went bad because of unexpected indent at line 4."
 
 
 def test_compilation_error_indent_2():
@@ -115,9 +116,9 @@ def test_compilation_error_indent_2():
             pass
         pass
     """)
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(SourceError) as exc:
         introspect_test_function(func)
-    assert exc.exconly() == "ValueError: Function compilation went bad because of unindent does not match any outer indentation level at line 4."
+    assert exc.exconly() == "commons.SourceError: Function compilation went bad because of unindent does not match any outer indentation level at line 4."
 
 
 def test_compilation_error_syntax():
@@ -125,6 +126,6 @@ def test_compilation_error_syntax():
     def test_foo():
         a 2
     """)
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(SourceError) as exc:
         introspect_test_function(func)
-    assert exc.exconly() == "ValueError: Function compilation went bad because of invalid syntax at line 3."
+    assert exc.exconly() == "commons.SourceError: Function compilation went bad because of invalid syntax at line 3."
