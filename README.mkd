@@ -69,14 +69,14 @@ that will naturally arise when Weldon will quit the POC stage.
   - [ ] cross python compliancy OR two living versions at the same time (using [3to2]()https://pypi.python.org/pypi/3to2)
   - [ ] single file packaging (students just have to run the file, that can easily be sent by mail or retrieved from the forge) ()
   - [ ] ALTERNATIVE: compilation for main OSs to a unique executable file.
-- [x] management of tests as a list of functions, not a plain string
+- [ ] automatic generation of a single file module for client side of the webinterface so they can use the functions by just pluging it into their project.
 - [x] management of tests as a list of complex objects having implementation and author
-- [ ] provides more insight into tests using static analysis (function name, fixtures,…)
+- [x] provides more insight into tests using [static analysis](ast_analyser.py) (function name, fixtures,…)
 - [ ] human readable serialization of server, so it can be edited and reloaded easily
 - [ ] server configuration by command line or from any rooter account
 - [x] provides way to control student names (could force them to use their official mail)
 - [ ] configuration of testers by problem (how many ? randomly choosen ?).
-- [ ] system to avoid naming collisions leading one player to hide a community test by providing a new test with the same name.
+- [x] system to avoid naming collisions leading one player to hide a community test by providing a new test with the same name (thank you, ast analysis !).
 - [x] perform report for each player, providing him results about number of passed tests (using [bashplotlib](https://github.com/glamp/bashplotlib)) and [pylint](https://pylint.org) rate and messages.
 - [ ] perform post-session report for each player, providing him insight of the data (graphic of number of passing (hidden) test and regression according to time, for instance), and the hidden tests.
 - [ ] perform during-session report for all players, providing insight about best players/testers.
@@ -89,7 +89,6 @@ that will naturally arise when Weldon will quit the POC stage.
 - [ ] provides one supplementary problem example, with different use-case and more complex story (involving multiple problems and students).
 - [x] over the network discussion between server and players, allowing the program to be used by multiple players without access to the server machine, and also ensure that players do not access internal data of the server (that includes hidden tests and everyone's users).
 - [ ] verify multi-user handling of the WebInterface
-- [ ] automatic generation of a single file module for client side of the webinterface so they can use the functions by just pluging it into their project.
 - [ ] network discussion needs encryption: using wireshark its easy to intercept token, source and submissions of others players.
 - [ ] extend weldon to work with arbitrary command for testing result generation (this leads to arbitrary language support).
 - [ ] arbitrary language and unit test framework support.
