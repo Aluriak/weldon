@@ -81,6 +81,7 @@ class Server:
                                      self.retrieve_players_of}
         self._db = defaultdict(lambda: defaultdict(list))  # token: {problem_id: [data]}
         self._players_name = {}  # token: name
+        self._players_from_name = {}  # name: token
 
 
     # @property
@@ -131,6 +132,7 @@ class Server:
             new = str(uuid.uuid4())
             token_set.add(new)
             self._players_name[new] = str(name)
+            self._players_from_name[str(name)] = new
             return new
         else:
             raise ServerError('Registration failed: bad password.')
