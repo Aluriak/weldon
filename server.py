@@ -223,8 +223,12 @@ class Server:
         problem = self._get_problem(problem_id)
         player_name = self._players_name[token]
         player_subs = self._player_submissions(token, problem.id)
-        report = make_report_on_player(player_name, token, player_subs, problem)
-        return '\n'.join(report)
+        try:
+            report = make_report_on_player(player_name, token, player_subs, problem)
+            return '\n'.join(report)
+        except IndexError:
+            raise ServerError("Player did not send any submission. "
+                              "No report available.")
 
     @api_method
     def retrieve_players_of(self, token:str, problem_id:int or str) -> [str] or ServerError:
