@@ -358,6 +358,7 @@ class Server:
         result = result_from_pytest(problem, source_code)
         if not dry:
             self._update_player_state(token, source_code, result)
+        assert isinstance(result, SubmissionResult)
         return result
 
     def _players_submit_solution_for(self, problem_id:str) -> iter:
