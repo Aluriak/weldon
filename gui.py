@@ -159,6 +159,7 @@ class WeldonInterface(tk.Frame):
         # Data holders
         self._source_file = None
         self._source_file_lasttime = 0  # last time of modification of the file
+        self._report_accessed = True  # no report to get now
 
     def _connected_to_server(self) -> bool:
         return bool(self.client)
@@ -270,11 +271,14 @@ class WeldonInterface(tk.Frame):
 
 
     def ask_report(self):
-        if self.__validate_current_state(validate_code=False):
+        if self._report_accessed:
+            self.err('You must first send a submission before asking for a report')
+        elif self.__validate_current_state(validate_code=False):
             try:
                 print(self.client.retrieve_report(problem_id=self.lst_problems_text.get()))
             except ServerError as e:
                 self.err(e.args[0])
+            self._report_accessed = True
 
     def submit(self):
         self.info('Submission…')
@@ -285,6 +289,7 @@ class WeldonInterface(tk.Frame):
             submission_result = self.client.submit_solution(source_code)
             # avoid two consecutive submissions on the same source code
             self._source_file_lasttime = os.path.getmtime(self._source_file)
+            self._report_accessed = False  # allow user to retrieve the report
             # finally handle the server answer
             self.__handle_submission_result(submission_result)
 
