@@ -4,6 +4,7 @@
 
 import os
 import tkinter as tk
+import textwrap
 from tkinter import filedialog, simpledialog, font
 from functools import partial
 
@@ -15,8 +16,8 @@ tk.EW
 TK_ROW_INFO = 1
 TK_ROW_TEST = 2
 TK_ROW_RESULT = 3
-TK_ROW_FOOTER = 4
-TK_ROW_FIRST_RESULT_LINE = 5
+TK_ROW_CODE = 4
+TK_ROW_FOOTER = 5
 
 NO_COLOR = 'white'
 COLOR_BG_TEXT = 'light grey'
@@ -24,7 +25,7 @@ COLOR_UNSET = 'pink'
 COLOR_ERR = 'red'
 COLOR_LOG = 'dark green'
 COLOR_OK = 'light green'
-COLOR_WAITING = 'yellow'
+COLOR_WAITING = '#fd6b14'
 
 DEFAULT_SERVER_CONFIG = {'host': '127.0.0.1', 'port': '6700',
                          'name': '', 'password': '', 'root': False}
@@ -177,7 +178,7 @@ class WeldonInterface(tk.Frame):
     def __create_widgets(self):
         parent = self.parent
         self.but_server_text = tk.StringVar(value='Server')
-        self.but_server = tk.Button(parent, textvariable=self.but_server_text, command=self.configure_server, bg=COLOR_UNSET)
+        self.but_server = tk.Button(parent, textvariable=self.but_server_text, command=self.configure_server, bg=COLOR_UNSET, width=8)
         self.but_server.grid(row=TK_ROW_INFO, column=0, sticky=tk.EW, columnspan=1)
 
         self.lab_problems = tk.Label(parent, text='Problem:')
@@ -186,7 +187,7 @@ class WeldonInterface(tk.Frame):
 
         self.lst_problems_text = tk.StringVar(value='')
         self.lst_problems_trace = None  # will be used for later trace management
-        self.lst_problems = tk.Spinbox(parent, textvariable=self.lst_problems_text, bg=COLOR_UNSET)
+        self.lst_problems = tk.Spinbox(parent, textvariable=self.lst_problems_text, bg=COLOR_UNSET, wrap=True)
         self.lst_problems.grid(row=TK_ROW_INFO, column=2, sticky=tk.EW)
         self.__init_widget_problems()
 
@@ -197,20 +198,25 @@ class WeldonInterface(tk.Frame):
         self.but_test.grid(row=TK_ROW_INFO, column=4, sticky=tk.EW)
         self.but_report = tk.Button(parent, text='Get report', command=self.ask_report)
         self.but_report.grid(row=TK_ROW_INFO, column=5, sticky=tk.EW)
-        self.but_close = tk.Button(parent, text='Quit', command=self.confirm_close)
+        self.but_close = tk.Button(parent, text='Quit', command=self.confirm_close, width=8)
         self.but_close.grid(row=TK_ROW_INFO, column=6, sticky=tk.EW)
 
         error_font = font.Font(family='Helvetica', size=10, weight='bold')
         self.current_error = tk.StringVar(value=' ' * 40)
-        self.lab_error = tk.Label(parent, textvariable=self.current_error, fg=COLOR_ERR, bg=COLOR_BG_TEXT, height=1, font=error_font)
+        self.lab_error = tk.Label(parent, textvariable=self.current_error, fg=COLOR_ERR, height=1, font=error_font)
         self.lab_error.grid(row=TK_ROW_FOOTER, column=0, sticky=tk.W, columnspan=8)
 
-        # used after submit, when user clicks on test
-        self.lab_test_code_text = tk.StringVar(value='')
-        self.lab_test_code = tk.Label(self.parent, textvariable=self.lab_test_code_text, anchor='w', justify='left')
+        # will hold all result widgets
+        self.result_widgets_frame = tk.LabelFrame(parent, text='Unit testing result', padx=5, pady=5)
+        self.result_widgets_frame.grid(row=TK_ROW_RESULT, column=1, sticky=tk.EW, columnspan=6)
+        self.result_widgets = []
 
-        # contains description of test results
-        self.labs_tests_results = []
+        # used after submit, when user clicks on test
+        self.result_font = font.Font(family='Helvetica', size=13)
+        self.lab_sourcecode_text = tk.StringVar(value='')
+        self.lab_sourcecode = tk.Label(self.result_widgets_frame, textvariable=self.lab_sourcecode_text, anchor='nw', justify='left', font=self.result_font, padx=10)
+        self.lab_sourcecode.grid(row=0, column=4, sticky=tk.EW, rowspan=10, columnspan=3)
+
 
     def __init_widget_problems(self):
         self.available_problems = tuple(self.client.list_problems()) if self.client else ()
@@ -226,44 +232,51 @@ class WeldonInterface(tk.Frame):
         self.lst_problems['values'] = self.available_problems
 
 
-    def __create_test_result_widget(self, tests, columnid:int=1, rowid:int=TK_ROW_FIRST_RESULT_LINE) -> tk.Label:
+    def __create_test_result_widget(self, tests) -> tk.Label:
+        # Delete old ones  (note that this yield memory leaks)
+        for widget in self.result_widgets:
+            widget.grid_forget()
+        self.result_widgets = []
+        # Create the new ones
         namemaxlen = len(max((test.name for test in tests), key=len))
-        type_repr = {'public': '✑', 'hidden': '❓', 'community': '✍'}
-        for look, name in self.labs_tests_results:
-            del look, name
-        self.labs_tests_results = []
+        type_repr = {'public': ' ', 'hidden': '❓', 'community': '✍'}  #✑
+        lines = []  # list of lines
         tests = sorted(tests, key=lambda t: t.name)
-        for rowidx, test in enumerate(tests, start=rowid):
-            type = type_repr[test.type]
+        create_label = lambda t, j, fg: tk.Label(self.result_widgets_frame, text=t, bg=NO_COLOR, fg=fg, anchor='w', justify=j, font=self.result_font)
+        for idx, test in enumerate(tests):
             name = test.name.ljust(namemaxlen)
-            succeed = '✔' if test.succeed else '✗'
-            look = f'{succeed}  {type}'
+            look = f"{'✔' if test.succeed else '✗'}  {type_repr[test.type]}"
 
-            look_font = font.Font(family='Helvetica', size=13)
-            look = tk.Label(self.parent, text=look, fg=COLOR_OK if test.succeed else COLOR_ERR, bg=NO_COLOR, font=look_font)
-            # type = tk.Label(self.parent, text=type, bg=NO_COLOR)
-            name = tk.Label(self.parent, text=name, bg=NO_COLOR, font=look_font)
-            colidx = 0
-            for widget, span in ((look, 1), (name, 1)):
-                widget.grid(row=rowidx, column=columnid+colidx, columnspan=span, sticky=tk.EW)
-                if test.type != 'hidden':
-                    widget.bind('<Button-1>', partial(self.__show_test, target_test=test))
-                colidx += span
-            self.labs_tests_results.append((look, name))
-        self._last_rowid = len(tests) + rowid
-        assert self._last_rowid == rowidx + 1, "All tests have not been printed"
+            lab_look = create_label(look, 'center', COLOR_OK if test.succeed else COLOR_ERR)
+            lab_look.grid(row=idx, column=0, columnspan=1, sticky=tk.EW)
+            lab_look.bind('<Button-1>', partial(self.__show_test, target_test=test))
+            self.result_widgets.append(lab_look)
+
+            lab_name = create_label(name, 'left', 'black' if test.succeed else COLOR_ERR)
+            lab_name.grid(row=idx, column=1, columnspan=2, sticky=tk.EW)
+            lab_name.bind('<Button-1>', partial(self.__show_test, target_test=test))
+            self.result_widgets.append(lab_name)
 
 
-    def __show_test(self, _=None, *, target_test):
+    def __show_test(self, _=None, *, target_test:str=None):
+        test_name = 'test_' + target_test.name
         if self.__validate_current_state(validate_code=False):
             problem = self.client.retrieve_problem()
-            target = tuple(test for test in problem.tests if test.name == 'test_' + target_test.name)
-            assert len(target) == 1
-            target = target[0]
-            text = f'# by {target.author}\n' if target.type == 'community' else ''
-            text += f'{target.source_code}'
-            self.lab_test_code_text.set(text)
-            self.lab_test_code.grid(row=self._last_rowid, column=1, columnspan=5, sticky=tk.EW)
+            target = tuple(test for test in problem.tests if test.name == test_name)
+            if len(target) == 0:
+                assert target_test.type == 'hidden'
+                self.err('This is a hidden test')
+            else:
+                assert len(target) == 1, "Test {} has multiple test with the same name".format(test_name)
+                target = target[0]
+                # do not print the def line
+                source_code = textwrap.dedent('\n'.join(target.source_code.splitlines()[1:]))
+                self.lab_sourcecode_text.set(source_code)
+
+                if target.type == 'community':
+                    self.info('Community test sent by {target.author}')
+                else:
+                    self.info('')  # empty the messages
 
 
     def __handle_submission_result(self, results):
