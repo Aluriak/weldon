@@ -3,6 +3,76 @@ import ast
 import dis
 from io import StringIO
 from functools import partial
+from commons import SourceError
+
+
+def introspect_test_function(source_code:str, *,
+                             only_one_function:bool=True,
+                             name_starts_with:str or [str]='test_',
+                             no_parameter_allowed=True,
+                             must_have_one_of=(['AssertionError'], ('pytest', 'raises')),
+                             prohibited_modules=('shutil', 'importlib'),
+                             prohibited_builtins=('globals', 'locals'),
+                            )-> SourceError or [str]:
+    """Raise SourceError if anything in given test source code do not match
+    expectations, that are modulable by the other parameters.
+
+    Return list of func name of each found function.
+
+    """
+    ret_names = []
+    must_have_one_of = tuple(must_have_one_of)
+    try:
+        fast = ast.parse(source_code)
+        compiled = compile(fast, '', 'exec')
+    except (IndentationError, SyntaxError) as e:
+        raise SourceError("Function compilation went bad because of {} at line {}."
+                         "".format(e.msg, e.lineno))
+    callables_in_source = tuple(functions_in(compiled))
+    if only_one_function:
+        if len(callables_in_source) > 1:
+            raise SourceError("Multiple callables found in given source code.")
+        if len(callables_in_source) < 1:
+            raise SourceError("No callable found in given source code.")
+
+    for test_function in callables_in_source:
+
+        if name_starts_with and not test_function.co_name.startswith(name_starts_with):
+            raise SourceError("Function '{}' name do not start by {}."
+                             "".format(test_function.co_name, name_starts_with))
+
+        if no_parameter_allowed and test_function.co_argcount > 0:
+            raise SourceError("Function '{}' must not expects ({}) parameters."
+                             "".format(test_function.co_name, test_function.co_argcount))
+
+        if must_have_one_of:
+            wanted_keys = tuple(map(set, must_have_one_of))
+            found_keys = (
+                search_in_ast(test_function, lambda co: wanted_key <= set(co.co_names))
+                for wanted_key in wanted_keys
+            )
+            if not any(found_keys):
+                raise SourceError("Function '{}' must use/raise {}."
+                                 "".format(test_function.co_name,
+                                           ' or '.join(' & '.join(key) for key in must_have_one_of)))
+
+        if prohibited_modules:  # ensure that none of them are imported
+            prohibited_modules_set = set(prohibited_modules)
+            if search_in_ast(test_function, lambda co: prohibited_modules_set & set(co.co_names)):
+                raise SourceError("Function '{}' must not use modules {}."
+                                 "".format(test_function.co_name,
+                                           ', '.join(prohibited_modules)))
+
+        if prohibited_builtins:  # ensure that none of them are used
+            prohibited_builtins_set = set(prohibited_builtins)
+            if search_in_ast(test_function, lambda co: prohibited_builtins_set & (set(co.co_names) | set(co.co_varnames))):
+                raise SourceError("Function '{}' must not use builtins {}."
+                                 "".format(test_function.co_name,
+                                           ', '.join(prohibited_builtins)))
+        # output the data for further reuse
+        ret_names.append(test_function.co_name)
+    # every tests succeed. The code seems ok to go.
+    return tuple(ret_names)
 
 
 def flags_of(code): return dis.pretty_flags(code)
@@ -51,70 +121,6 @@ def pprint(code, default_formatter=repr, padding_field=0, colsep=' | '):
     field_width = len(max(fields, key=len)) + padding_field
     for field, value in printables.items():
         yield field.rjust(field_width) + colsep + str(value)
-
-
-def introspect_test_function(source_code:str, *,
-                             only_one_function:bool=True,
-                             name_starts_with:str or [str]='test_',
-                             no_parameter_allowed=True,
-                             must_have_one_of=(['AssertionError'], ('pytest', 'raises')),
-                             prohibited_modules=('shutil', 'importlib'),
-                             prohibited_builtins=('globals', 'locals'),
-                            )-> ValueError or None:
-    """Raise ValueError if anything in given test source code do not match
-    expectations, that are modulable by the other parameters.
-
-    """
-    must_have_one_of = tuple(must_have_one_of)
-    try:
-        fast = ast.parse(source_code)
-        compiled = compile(fast, '', 'exec')
-    except (IndentationError, SyntaxError) as e:
-        raise ValueError("Function compilation went bad because of {} at line {}."
-                         "".format(e.msg, e.lineno))
-    callables_in_source = tuple(functions_in(compiled))
-    if only_one_function:
-        if len(callables_in_source) > 1:
-            raise ValueError("Multiple callables found in given source code.")
-        if len(callables_in_source) < 1:
-            raise ValueError("No callable found in given source code.")
-
-    for test_function in callables_in_source:
-
-        if name_starts_with and not test_function.co_name.startswith(name_starts_with):
-            raise ValueError("Function '{}' name do not start by {}."
-                             "".format(test_function.co_name, name_starts_with))
-
-        if no_parameter_allowed and test_function.co_argcount > 0:
-            raise ValueError("Function '{}' must not expects ({}) parameters."
-                             "".format(test_function.co_name, test_function.co_argcount))
-
-        if must_have_one_of:
-            wanted_keys = tuple(map(set, must_have_one_of))
-            found_keys = (
-                search_in_ast(test_function, lambda co: wanted_key <= set(co.co_names))
-                for wanted_key in wanted_keys
-            )
-            if not any(found_keys):
-                raise ValueError("Function '{}' must use/raise {}."
-                                 "".format(test_function.co_name,
-                                           ' or '.join(' & '.join(key) for key in must_have_one_of)))
-
-        if prohibited_modules:  # ensure that none of them are imported
-            prohibited_modules_set = set(prohibited_modules)
-            if search_in_ast(test_function, lambda co: prohibited_modules_set & set(co.co_names)):
-                raise ValueError("Function '{}' must not use modules {}."
-                                 "".format(test_function.co_name,
-                                           ', '.join(prohibited_modules)))
-
-        if prohibited_builtins:  # ensure that none of them are used
-            prohibited_builtins_set = set(prohibited_builtins)
-            if search_in_ast(test_function, lambda co: prohibited_builtins_set & (set(co.co_names) | set(co.co_varnames))):
-                raise ValueError("Function '{}' must not use builtins {}."
-                                 "".format(test_function.co_name,
-                                           ', '.join(prohibited_builtins)))
-    # every tests succeed. The code seems ok to go.
-    return
 
 
 def __experimentation():
