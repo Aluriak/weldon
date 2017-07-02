@@ -38,7 +38,6 @@ SERVER_CONFIG_ORDER = ('name', 'password', 'host', 'port', 'root')
 try:
     from populate_server import populate
     conn = Client('SHUBISHI', name='populate3', root=True, port=PORT, host='127.0.0.1')
-    print(conn)
     populate(conn)
     del conn
 except ServerError as e:
@@ -242,7 +241,7 @@ class WeldonInterface(tk.Frame):
             look_font = font.Font(family='Helvetica', size=13)
             look = tk.Label(self.parent, text=look, fg=COLOR_OK if test.succeed else COLOR_ERR, bg=NO_COLOR, font=look_font)
             # type = tk.Label(self.parent, text=type, bg=NO_COLOR)
-            name = tk.Label(self.parent, text=name, bg=NO_COLOR)
+            name = tk.Label(self.parent, text=name, bg=NO_COLOR, font=look_font)
             colidx = 0
             for widget, span in ((look, 1), (name, 1)):
                 widget.grid(row=rowidx, column=columnid+colidx, columnspan=span, sticky=tk.EW)
@@ -260,7 +259,6 @@ class WeldonInterface(tk.Frame):
             target = tuple(test for test in problem.tests if test.name == 'test_' + target_test.name)
             assert len(target) == 1
             target = target[0]
-            print(target)
             text = f'# by {target.author}\n' if target.type == 'community' else ''
             text += f'{target.source_code}'
             self.lab_test_code_text.set(text)
