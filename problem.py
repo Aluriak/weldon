@@ -25,6 +25,11 @@ class Problem:
         self._hidden_tests = Test.to_test_suite(hidden_tests, author=self._author, type='hidden')
         self._community_tests = Test.to_test_suite(community_tests, author=self._author, type='community')
 
+    def have_test(self, name:str) -> bool:
+        """True if have a test of given name, whatever the type"""
+        return any(name == test.name for test in self.tests)
+
+
     @property
     def id(self): return self._id
     @property
@@ -53,16 +58,19 @@ class Problem:
         """Add a single test to public tests"""
         assert isinstance(test, Test)
         assert test.type == 'public'
+        assert not self.have_test(test.name)
         self._public_tests += (test,)
     def add_hidden_test(self, test:Test):
         """Add a single test to hidden tests"""
         assert isinstance(test, Test)
         assert test.type == 'hidden'
+        assert not self.have_test(test.name)
         self._hidden_tests += (test,)
     def add_community_test(self, test:Test):
         """Add a single test to community tests"""
         assert isinstance(test, Test)
         assert test.type == 'community'
+        assert not self.have_test(test.name)
         self._community_tests += (test,)
 
 
