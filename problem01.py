@@ -11,7 +11,7 @@ import random
 from pprint import pprint
 import pytest
 import server as weldon
-from commons import ServerError
+from commons import ServerError, SourceError
 
 
 def test_story_problem01():
@@ -78,7 +78,14 @@ def test_story_problem01():
     assert all(test.succeed for test in server_answer.tests)
 
     print('\n\nI can also send new unit tests.')
-    server.submit_test(my_token, problem.id, NEW_UNIT_TEST)
+    try:
+        server.submit_test(my_token, problem.id, NEW_UNIT_TEST_BAD)
+        assert False, "server didn't spot the error in NEW_UNIT_TEST_BAD"
+    except SourceError as e:
+        print('Server refuse my test because', e.args[0])
+    print('So i update my code and resend it:')
+    server.submit_test(my_token, problem.id, NEW_UNIT_TEST_GOOD)
+    print('Now it is added to the community tests for this exercise !')
 
 
     print('\n\nI can send again my solution, to prove that i pass the new test.')
@@ -173,8 +180,12 @@ def revcomp(sequence):
     except KeyError:
         raise ValueError("Input sequence is not an ATGC one.")
 """
-NEW_UNIT_TEST = """
-def test_sent_by_lucas():
+NEW_UNIT_TEST_BAD = """
+def test_sent_by_student():
+    revcomp('AAT') == 'ATT'
+"""
+NEW_UNIT_TEST_GOOD = """
+def test_sent_by_student():
     assert revcomp('AAT') == 'ATT'
 """
 
