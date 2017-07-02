@@ -273,7 +273,7 @@ class Server:
     def _add_test_to_problem(self, problem:Problem, type:str,
                              author_token:str, test_code:str) -> ServerError or None:
         """Add test of given type to the given problem test adder. Raise
-        a detailed ServerError if any problem
+        a detailed ServerError if any problem.
 
         problem_adder -- Problem.add_community_test or alike, binded to an instance
         author_token -- author of the test
@@ -282,28 +282,29 @@ class Server:
         """
         assert type in Test.VALID_TEST_TYPES
         problem = self._get_problem(problem)
-        self.validate_test(author_token, test_code, problem.id)
-        problem_adder = getattr(problem, f'add_{type}_test')
+        if not self._test_upload_allowed(author_token, problem.id):
+            raise ServerError("Given token's last submission did not succeed all tests")
+
+        # Validate the test itself ; it will raise a SourceError if anything is wrong
         try:
             test = Test(str(test_code), self._players_name[author_token], type)
         except Test.SourceError as e:
             raise ServerError(f"Test is not valid because: {e.args[0]}")
-        problem_adder(test)
 
-
-    def validate_test(self, token:str, test_code, problem_id) -> ServerError or None:
-        """Raise ServerError if anything goes wrong."""
-        problem = self._get_problem(problem_id)
-        if not self._test_upload_allowed(token, problem.id):
-            raise ServerError("Given token's last submission did not succeed all tests")
+        # test should not be already present in the problem definition
+        if problem.have_test(test.name):
+            raise ServerError(f"A test is already named {test.name}")
 
         # verify that player succeeds on this new test
         alt_problem = problem.copy()
-        alt_problem.add_community_test(Test(str(test_code), token, 'community'))
-        source_code = self._player_last_submission(token, problem_id).source_code
-        submission_result = self._run_tests_for_player(token, alt_problem, source_code, dry=True)
+        alt_problem.add_community_test(Test(str(test_code), author_token, 'community'))
+        source_code = self._player_last_submission(author_token, problem.id).source_code
+        submission_result = self._run_tests_for_player(author_token, alt_problem, source_code, dry=True)
         if not submission_result.total_success:
             raise ServerError("Given test fail on last submission")
+
+        # All is ok: add the test to the problem
+        getattr(problem, f'add_{type}_test')(test)
 
 
     @api_method
