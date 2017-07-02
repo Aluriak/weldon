@@ -12,6 +12,10 @@ class ServerError(Exception):
     """Raised by Server when players are using the service badly"""
     pass
 
+class SourceError(Exception):
+    """Raised by analyzers when they spot a problem in a source code"""
+    pass
+
 
 TestResult = jsonable_class(
     'TestResult',
