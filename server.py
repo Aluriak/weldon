@@ -119,26 +119,30 @@ class Server:
                 in self.api_methods_parameters().items()
                 if not getattr(self, name) in self.restricted_to_rooter}
 
-    @api_method
-    def register_player(self, name:str, password:str='') -> str:
-        if password == self.player_password:
-            valider, err = self._player_name_valider
+    def _register_user(self, name:str, password:str, root:bool=False) -> 'token' or ServerError:
+        """Perform the registration for player (rooter if `root`)"""
+        expected_password = self.rooter_password if root else self.player_password
+        name_valider = self._rooter_name_valider if root else self._player_name_valider
+        token_set = self.tokens_rooter if root else self.tokens_player
+        if password == expected_password:
+            valider, err = name_valider
             if not valider(name):
                 raise ServerError('Bad name: ' + str(err))
             new = str(uuid.uuid4())
-            self.tokens_player.add(new)
+            token_set.add(new)
             self._players_name[new] = str(name)
             return new
         else:
             raise ServerError('Registration failed: bad password.')
 
     @api_method
+    def register_player(self, name:str, password:str='') -> str:
+        return self._register_user(name, password, root=False)
+
+    @api_method
     def register_rooter(self, name:str, password:str='') -> str:
-        if password == self.rooter_password:
-            new = str(uuid.uuid4())
-            self.tokens_rooter.add(new)
-            self._players_name[new] = str(l for l in name if re.match(r'[a-zA-Z_0-9]', l))
-            return new
+        return self._register_user(name, password, root=True)
+
 
     @api_method
     def register_problem(self, token:str, title:str, description:str,
