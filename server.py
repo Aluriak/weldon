@@ -395,7 +395,7 @@ class Server:
     def _players_submit_test_for(self, problem_id:str) -> iter:
         """Yield token of players that have submitted test to given problem."""
         problem = self._get_problem(problem_id)
-        yield from (test.author for test in problem.community_tests)
+        yield from (self._players_from_name[test.author] for test in problem.community_tests)
 
     def _players_involved_in(self, problem_id:str) -> frozenset:
         """Return set of token of players that have participated to given problem,
