@@ -205,7 +205,16 @@ class Server:
         try:
             self.open_problems.remove(problem.id)
         except KeyError:  # problem not in open problems
-            raise ServerError("Given problem ({}) is already closed".format(problem.title))
+            # raise ServerError(f"Given problem ({problem.title}) is already closed")
+            pass
+
+    @api_method
+    def open_problem_session(self, token:str, problem_id:int or str) -> None or ServerError:
+        """Remove given problems from the list of closed ones"""
+        problem = self._get_problem(problem_id)
+        # if problem in self.open_problems:
+            # raise ServerError(f"Given problem ({problem.title}) is already open")
+        self.open_problems.add(problem)
 
 
     @api_method
