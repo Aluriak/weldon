@@ -90,10 +90,10 @@ class Send:
             method_params = tuple(param for param in params if param not in self.known_params)
             known_params = tuple(param for param in params if param in self.known_params)
             # generate the method definition
-            method_def = "def {}(self, {}):\n return self._send('{}', {}{}{})".format(
-                method_name, ', '.join(method_params),
+            method_def = "def {}(self, {} **kwargs):\n return self._send('{}', {}{}{})".format(
+                method_name, ', '.join(method_params) + ',' if method_params else '',
                 method_name,
-                ', '.join('{p}=self.{p}'.format(p=param) for param in known_params),
+                ', '.join('{p}=kwargs.get("{p}", self.{p})'.format(p=param) for param in known_params),
                 ', ' if known_params else '',
                 ', '.join('{p}={p}'.format(p=param) for param in method_params),
             )
