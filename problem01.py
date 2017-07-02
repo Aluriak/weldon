@@ -114,6 +114,7 @@ def test_story_problem01():
     print('Rooter can retrieve students implied in the problem:')
     players = server.retrieve_players_of(rooter_token, problem.id)
     print('\t' + '\n\t'.join(players))
+    assert len(players) == 1, "There is only one student in this story, but not 1 are found"
     choosen_player = random.choice(players)
     print('Rooter looks at the progress of student {} by asking a report to the server:'
           ''.format(choosen_player))
