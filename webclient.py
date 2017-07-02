@@ -14,11 +14,11 @@ def __faild_on(payload):
     print('ServerError:', payload)
     exit(1)
 
-def send(function:str, *args:str, tcp_port:int=TCP_PORT,
+def send(function:str, *args:str, port:int=TCP_PORT,
          buffer_size:int=BUFFER_SIZE, host:str=TCP_IP,
          failed_on=__faild_on, **kwargs):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((host, tcp_port))
+    s.connect((host, port))
     payload = wjson.as_json((function, tuple(args), dict(kwargs))).encode()
     s.send(payload)
 
@@ -50,11 +50,11 @@ class Send:
     """
 
     def __init__(self, registration_password:str, name:str, problem=None,
-                 root:bool=False, tcp_port:int=TCP_PORT,
+                 root:bool=False, port:int=TCP_PORT,
                  buffer_size:int=BUFFER_SIZE, host:str=TCP_IP):
         self.token = None
         self.problem_id = problem
-        self.tcp_port = int(tcp_port)
+        self.port = int(port)
         self.buffer_size = int(buffer_size)
         self.host = str(host)
         self.root = bool(root)
