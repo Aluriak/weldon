@@ -242,10 +242,12 @@ class WeldonInterface(tk.Frame):
 
     def confirm_close(self):
         default_active_bg = self.but_close['activebackground']
+        default_bg = self.but_close['bg']
         self.but_close.configure(text='Sure ?', bg=COLOR_WAITING, command=self.parent.quit, activebackground=COLOR_WAITING)
-        def infirm_close(_):
-            self.but_close.configure(text='Quit', bg=NO_COLOR, command=self.confirm_close, activebackground=default_active_bg)
+        def infirm_close(_=None):
+            self.but_close.configure(text='Quit', bg=default_bg, command=self.confirm_close, activebackground=default_active_bg)
         self.but_close.bind('<Button-3>', infirm_close)
+        self.after(1000, infirm_close)  # auto infirm in one second
 
 
     def configure_server(self, can_cancel:bool=True):
