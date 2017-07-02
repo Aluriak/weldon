@@ -2,19 +2,34 @@
 
 """
 
+from ast_analysis import introspect_test_function
+from commons import SourceError
+
+
+VALID_TEST_TYPES = {'public', 'hidden', 'community'}
+
 
 class Test:
     """A Test instance is a unit test ready to be launched.
     It should be associated with a Problem.
 
     """
-    __slots__ = ['source_code', 'author', 'type']
+    __slots__ = ['source_code', 'author', 'type', 'name']
+    VALID_TEST_TYPES = VALID_TEST_TYPES
+    SourceError = SourceError
 
-    def __init__(self, source_code:str, author:str, type:str):
+    def __init__(self, source_code:str, author:str, type:str, name:str=''):
         self.source_code = str(source_code).strip('\n') + '\n'
         self.author = str(author)
         self.type = str(type)
-        assert self.type in {'public', 'hidden', 'community'}
+        assert self.type in VALID_TEST_TYPES
+        self.name = str(name)
+        if not name:
+            self.validate()
+
+    def validate(self) -> None or SourceError:
+        """Introspection of the function. Raise ValueError if anything wrong."""
+        self.name = introspect_test_function(self.source_code, only_one_function=True)[0]
 
     def __str__(self):
         """Return the ready to be print in file version of the instance"""
