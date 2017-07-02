@@ -61,6 +61,14 @@ that will naturally arise when Weldon will quit the POC stage.
 - [ ] allow arbitrary number/hierarchy of file for user submissions
 - [ ] allow arbitrary number/hierarchy of file for test submissions and definition
 - [ ] allow arbitrary number/hierarchy of file for test problem definition (that could include public & community tests, readme, instructions, code template,…)
+- [x] basic gui allowing student to interact with the server without knowledge of the protocol
+- [ ] gui: better printing of the submission results
+- [ ] gui: printing of the report (will need works on server code to get a formal representation of reports, or a very direct printing of the report as a multiline label)
+- [ ] gui: make a distributable, dinopython compatible, single-file, version of the gui, so it can be used on any machine having python.
+  - [x] no third-party module
+  - [ ] cross python compliancy OR two living versions at the same time (using [3to2]()https://pypi.python.org/pypi/3to2)
+  - [ ] single file packaging (students just have to run the file, that can easily be sent by mail or retrieved from the forge) ()
+  - [ ] ALTERNATIVE: compilation for main OSs to a unique executable file.
 - [x] management of tests as a list of functions, not a plain string
 - [x] management of tests as a list of complex objects having implementation and author
 - [ ] provides more insight into tests using static analysis (function name, fixtures,…)
