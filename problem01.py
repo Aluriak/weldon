@@ -11,7 +11,7 @@ import random
 from pprint import pprint
 import pytest
 import server as weldon
-from commons import ServerError, SourceError
+from commons import ServerError
 
 
 def test_story_problem01():
@@ -81,7 +81,7 @@ def test_story_problem01():
     try:
         server.submit_test(my_token, problem.id, NEW_UNIT_TEST_BAD)
         assert False, "server didn't spot the error in NEW_UNIT_TEST_BAD"
-    except SourceError as e:
+    except ServerError as e:
         print('Server refuse my test because', e.args[0])
     print('So i update my code and resend it:')
     server.submit_test(my_token, problem.id, NEW_UNIT_TEST_GOOD)
