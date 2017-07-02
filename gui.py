@@ -232,6 +232,7 @@ class WeldonInterface(tk.Frame):
         for look, name in self.labs_tests_results:
             del look, name
         self.labs_tests_results = []
+        tests = sorted(tests, key=lambda t: t.name)
         for rowidx, test in enumerate(tests, start=rowid):
             type = type_repr[test.type]
             name = test.name.ljust(namemaxlen)
