@@ -19,7 +19,7 @@ class Test:
     SourceError = SourceError
 
     def __init__(self, source_code:str, author:str, type:str, name:str=''):
-        self.source_code = str(source_code).strip('\n') + '\n'
+        self.source_code = str(source_code).strip() + '\n'
         self.author = str(author)
         self.type = str(type)
         assert self.type in VALID_TEST_TYPES
