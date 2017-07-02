@@ -265,11 +265,30 @@ class Server:
 
     @api_method
     def submit_test(self, token:str, problem_id:int, test_code:str) -> ServerError or None:
+        """Add given test in the commutity tests of given problem.
         """
+        self._add_test_to_problem(problem_id, 'community', token, test_code)
+
+
+    def _add_test_to_problem(self, problem:Problem, type:str,
+                             author_token:str, test_code:str) -> ServerError or None:
+        """Add test of given type to the given problem test adder. Raise
+        a detailed ServerError if any problem
+
+        problem_adder -- Problem.add_community_test or alike, binded to an instance
+        author_token -- author of the test
+        test_code -- source code sent by author
+
         """
-        problem = self._get_problem(problem_id)
-        self.validate_test(token, test_code, problem.id)
-        problem.add_community_test(Test(str(test_code), token, 'community'))
+        assert type in Test.VALID_TEST_TYPES
+        problem = self._get_problem(problem)
+        self.validate_test(author_token, test_code, problem.id)
+        problem_adder = getattr(problem, f'add_{type}_test')
+        try:
+            test = Test(str(test_code), self._players_name[author_token], type)
+        except Test.SourceError as e:
+            raise ServerError(f"Test is not valid because: {e.args[0]}")
+        problem_adder(test)
 
 
     def validate_test(self, token:str, test_code, problem_id) -> ServerError or None:
@@ -290,14 +309,12 @@ class Server:
     @api_method
     def add_public_test(self, token:str, problem_id:int, test_code:str) -> ServerError or None:
         """Add given test to the set of public tests of given problem"""
-        problem = self._get_problem(problem_id)
-        problem.add_public_test(Test(str(test_code), token, 'public'))
+        self._add_test_to_problem(problem_id, 'public', token, test_code)
 
     @api_method
     def add_hidden_test(self, token:str, problem_id:int, test_code:str) -> ServerError or None:
         """Add given test to the set of hidden tests of given problem"""
-        problem = self._get_problem(problem_id)
-        problem.add_hidden_test(Test(str(test_code), token, 'hidden'))
+        self._add_test_to_problem(problem_id, 'hidden', token, test_code)
 
 
     def _test_upload_allowed(self, token:str, problem_id:int) -> bool:
