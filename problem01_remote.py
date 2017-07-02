@@ -56,8 +56,12 @@ def revcomp(sequence):
     except KeyError:
         raise ValueError("Input sequence is not an ATGC one.")
 """
-NEW_UNIT_TEST = """
-def test_sent_by_lucas():
+NEW_UNIT_TEST_BAD = """
+def test_sent_by_student():
+    revcomp('AAT') == 'ATT'
+"""
+NEW_UNIT_TEST_GOOD = """
+def test_sent_by_student():
     assert revcomp('AAT') == 'ATT'
 """
 
@@ -141,8 +145,20 @@ pprint(server_answer.tests)
 # print(server_answer.full_trace)
 assert all(test.succeed for test in server_answer.tests)
 
+
 print('\n\nI can also send new unit tests.')
-conn.submit_test(NEW_UNIT_TEST)
+try:
+    conn.submit_test(NEW_UNIT_TEST_BAD)
+    assert False, "server didn't spot the error in NEW_UNIT_TEST_BAD"
+except ServerError as e:
+    print('Server refused my test because', e.args[0])
+print('So i update my code and resend it:')
+try:
+    conn.submit_test(NEW_UNIT_TEST_GOOD)
+    print('Now it is added to the community tests for this exercise !')
+except ServerError as e:
+    assert e.args[0].startswith('A test is already named '), "Wrong error spotted by Server on NEW_UNIT_TEST_BAD"
+    print('Well, it already exists. So i already succeed to pass it \o/')
 
 
 print('\n\nI can send again my solution, to prove that i pass the new test.')
