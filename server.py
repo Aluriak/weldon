@@ -67,7 +67,8 @@ class Server:
         """
         self._player_name_valider = player_name_valider
         self._rooter_name_valider = rooter_name_valider
-        self.problems = {}  # id or name: Problem instance
+        self.problems = {}  # title: Problem instance
+        self.problems_by_id = {}  # uid: Problem instance
         self.open_problems = set()  # id of problems workable by students
         self._next_problem_id = 1
         self.rooter_password = str(rooter_password)
@@ -146,9 +147,14 @@ class Server:
         and open its session.
 
         """
+        if title in self.problems:
+            author = self._players_name(self.problems[title].author)
+            if self._players_name(token) == author:
+                raise ServerError(f"You already submited a problem of title '{title}'")
+            raise ServerError(f"{author} already submited a problem of title '{title}'")
         problem = Problem(self._yield_problem_id(), title, description,
                           public_tests, hidden_tests, author=token)
-        self.problems[problem.id] = problem
+        self.problems_by_id[problem.id] = problem
         self.problems[problem.title] = problem
         self.open_problems.add(problem.id)
         return problem.as_public_data()
@@ -161,7 +167,7 @@ class Server:
                 return problem_id
             else:
                 problem_id = problem_id.id
-        problem = self.problems.get(problem_id)
+        problem = self.problems_by_id.get(problem_id, self.problems.get(problem_id))
         if not problem:
             raise ServerError("Problem {} do not exists".format(problem_id))
         return problem
