@@ -11,8 +11,8 @@ from functools import partial
 from webclient import Send as Client
 from commons import ServerError
 
-tk.EW
 
+WINDOW_HEIGHT, WINDOW_WIDTH = 800, 600
 TK_ROW_INFO = 1
 TK_ROW_TEST = 2
 TK_ROW_RESULT = 3
@@ -154,16 +154,19 @@ class WeldonInterface(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
+        self.parent.geometry('{}x{}'.format(WINDOW_HEIGHT, WINDOW_WIDTH))
         self.parent.title("Weldon")
         self.client = None
-        self.__create_widgets()
-        self._server_config = DEFAULT_SERVER_CONFIG
-        self.configure_server(can_cancel=False)
 
         # Data holders
         self._source_file = None
         self._source_file_lasttime = 0  # last time of modification of the file
         self._report_accessed = True  # no report to get now
+
+        # Build the interface
+        self.__create_widgets()
+        self._server_config = DEFAULT_SERVER_CONFIG
+        self.configure_server(can_cancel=False)
 
     def _connected_to_server(self) -> bool:
         return bool(self.client)
