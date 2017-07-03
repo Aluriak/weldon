@@ -228,11 +228,19 @@ class WeldonInterface(tk.Frame):
                 self.lst_problems_text.trace_remove(*self.lst_problems_trace)
             except AttributeError:
                 self.lst_problems_text.trace_vdelete(*self.lst_problems_trace)
+        def callback(name, index, mode):
+            color_callback = gen_callback(self.lst_problems, self.available_problems, self.lst_problems_text, color_diff=COLOR_UNSET, color_nodiff=COLOR_OK)
+            color_callback(name, index, mode)
+            problem_name = self.lst_problems_text.get()
+            if problem_name in self.available_problems:
+                if self.__validate_current_state(validate_code=False, validate_problem=False):
+                    problem = self.client.retrieve_problem(problem_id=problem_name)
+                    self.lab_sourcecode_text.set(problem.description)
         try:  # first try the new way
-            trace = self.lst_problems_text.trace_add('write', gen_callback(self.lst_problems, self.available_problems, self.lst_problems_text, color_diff=COLOR_UNSET, color_nodiff=COLOR_OK))
+            trace = self.lst_problems_text.trace_add('write', callback)
             self.lst_problems_trace = 'write', trace
         except AttributeError:  # then the deprecated one
-            trace = self.lst_problems_text.trace('w', gen_callback(self.lst_problems, self.available_problems, self.lst_problems_text))
+            trace = self.lst_problems_text.trace('w', callback)
             self.lst_problems_trace = 'w', trace
         # give the proper initial color
         self.lst_problems['values'] = self.available_problems
@@ -362,19 +370,19 @@ class WeldonInterface(tk.Frame):
             self.__handle_submission_result(submission_result)
 
 
-    def __validate_current_state(self, validate_code=True) -> bool:
+    def __validate_current_state(self, validate_code=True, validate_problem=True) -> bool:
         if not self._connected_to_server():
             self.err("Can't submit: not connected to server")
             self.but_server.configure(bg=COLOR_ERR)
         elif not self.lst_problems_text.get():
             self.err("Can't submit: no problem choosen")
             self.lst_problems.configure(bg=COLOR_ERR)
-        elif self.lst_problems_text.get() not in self.available_problems:
+        elif validate_problem and self.lst_problems_text.get() not in self.available_problems:
             self.err("Can't submit: Given problem not known")
             self.lst_problems.configure(bg=COLOR_ERR)
         elif validate_code and not self._source_file:
             self.err("Can't submit: source code not given")
-            self.but_sourcefile.configure(bg=COLOR_ERR)
+            self.but_sourcefile.configure(bg=COLOR_WAITING)
         elif validate_code and os.path.getmtime(self._source_file) == self._source_file_lasttime:
             self.err("Can't submit: source code not changed since last submission.")
         else:  # no problem: we are ready to speak with the server
