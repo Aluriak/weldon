@@ -12,5 +12,5 @@ server:
 
 t:tests
 tests:
-	pytest -vv . --doctest-module --ignore=venv/ --ignore=run --ignore=run.backup --ignore=crypto.py --ignore=problem01_remote.py --ignore=gui.py
-	pytest -vv problem01.py
+	python3 -m pytest -vv . --doctest-module --ignore=venv/ --ignore=run --ignore=run.backup --ignore=crypto.py --ignore=problem01_remote.py --ignore=gui.py
+	python3 -m pytest -vv problem01.py
