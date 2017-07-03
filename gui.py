@@ -221,12 +221,15 @@ class WeldonInterface(tk.Frame):
     def __init_widget_problems(self):
         self.available_problems = tuple(self.client.list_problems()) if self.client else ()
         if self.lst_problems_trace:
-            self.lst_problems_text.trace_remove(*self.lst_problems_trace)
+            try:
+                self.lst_problems_text.trace_remove(*self.lst_problems_trace)
+            except AttributeError:
+                self.lst_problems_text.trace_vdelete(*self.lst_problems_trace)
         try:  # first try the new way
             trace = self.lst_problems_text.trace_add('write', gen_callback(self.lst_problems, self.available_problems, self.lst_problems_text, color_diff=COLOR_UNSET, color_nodiff=COLOR_OK))
             self.lst_problems_trace = 'write', trace
         except AttributeError:  # then the deprecated one
-            trace = self.lst_problems_text.trace('w', gen_callback(self.lst_problems, self.available_problems, value_holder))
+            trace = self.lst_problems_text.trace('w', gen_callback(self.lst_problems, self.available_problems, self.lst_problems_text))
             self.lst_problems_trace = 'w', trace
         # give the proper initial color
         self.lst_problems['values'] = self.available_problems
@@ -245,7 +248,7 @@ class WeldonInterface(tk.Frame):
         create_label = lambda t, j, fg: tk.Label(self.result_widgets_frame, text=t, bg=NO_COLOR, fg=fg, anchor='w', justify=j, font=self.result_font)
         for idx, test in enumerate(tests):
             name = test.name.ljust(namemaxlen)
-            look = f"{'✔' if test.succeed else '✗'}  {type_repr[test.type]}"
+            look = "{}  {}".format(('✔' if test.succeed else '✗'), type_repr[test.type])
 
             lab_look = create_label(look, 'center', COLOR_OK if test.succeed else COLOR_ERR)
             lab_look.grid(row=idx, column=0, columnspan=1, sticky=tk.EW)
@@ -282,7 +285,7 @@ class WeldonInterface(tk.Frame):
     def __handle_submission_result(self, results):
         nb_tests = sum(1 for test in results.tests)
         nb_succeed_tests = sum(1 for test in results.tests if test.succeed)
-        self.log(f'Submission done. {nb_succeed_tests}/{nb_tests} tests succeed.')
+        self.log('Submission done. {}/{} tests succeed.'.format(nb_succeed_tests, nb_tests))
         self.__create_test_result_widget(results.tests)
 
         # print(results)
