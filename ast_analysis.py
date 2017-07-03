@@ -12,7 +12,7 @@ def introspect_test_function(source_code:str, *,
                              no_parameter_allowed=True,
                              must_have_one_of=(['AssertionError'], ('pytest', 'raises')),
                              prohibited_modules=('shutil', 'importlib'),
-                             prohibited_builtins=('globals', 'locals'),
+                             prohibited_builtins=('globals', 'locals')
                             )-> SourceError or [str]:
     """Raise SourceError if anything in given test source code do not match
     expectations, that are modulable by the other parameters.
