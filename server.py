@@ -160,8 +160,8 @@ class Server:
         if title in self.problems:
             author = self._players_name.get(self.problems[title].author, None)
             if self._players_name[token] == author:
-                raise ServerError(f"You already submited a problem of title '{title}'")
-            raise ServerError(f"{author} already submited a problem of title '{title}'")
+                raise ServerError("You already submited a problem of title '{}'".format(title))
+            raise ServerError("{} already submited a problem of title '{}'".format(author, title))
         problem = Problem(self._yield_problem_id(), title, description,
                           public_tests, hidden_tests, author=token)
         self.problems_by_id[problem.id] = problem
@@ -207,7 +207,7 @@ class Server:
         try:
             self.open_problems.remove(problem.id)
         except KeyError:  # problem not in open problems
-            # raise ServerError(f"Given problem ({problem.title}) is already closed")
+            # raise ServerError("Given problem ({}) is already closed".format(problem.title))
             pass
 
     @api_method
@@ -215,7 +215,7 @@ class Server:
         """Remove given problems from the list of closed ones"""
         problem = self._get_problem(problem_id)
         # if problem in self.open_problems:
-            # raise ServerError(f"Given problem ({problem.title}) is already open")
+            # raise ServerError("Given problem ({}) is already open".format(problem.title))
         self.open_problems.add(problem)
 
 
@@ -289,11 +289,11 @@ class Server:
         try:
             test = Test(str(test_code), self._players_name[author_token], type)
         except Test.SourceError as e:
-            raise ServerError(f"Test is not valid because: {e.args[0]}")
+            raise ServerError("Test is not valid because: {}".format(e.args[0]))
 
         # test should not be already present in the problem definition
         if problem.have_test(test.name):
-            raise ServerError(f"A test is already named {test.name}")
+            raise ServerError("A test is already named {}".format(test.name))
 
         # verify that player succeeds on this new test
         alt_problem = problem.copy()
@@ -304,7 +304,7 @@ class Server:
             raise ServerError("Given test fail on last submission")
 
         # All is ok: add the test to the problem
-        getattr(problem, f'add_{type}_test')(test)
+        getattr(problem, 'add_{}_test'.format(type))(test)
 
 
     @api_method
