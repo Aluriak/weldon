@@ -191,6 +191,18 @@ class WeldonInterface(tk.Frame):
         self.lst_problems_text = tk.StringVar(value='')
         self.lst_problems_trace = None  # will be used for later trace management
         self.lst_problems = tk.Spinbox(parent, textvariable=self.lst_problems_text, bg=COLOR_UNSET, wrap=True)
+
+        def _update_problem_list(event):
+            """Binded on user interaction with the list of problems"""
+            if self.available_problems:
+                try:
+                    index = self.available_problems.index(self.lst_problems_text.get())
+                    self.lst_problems_text.set(self.available_problems[index + 1])
+                except IndexError:  # no problem, or index > len(problems)
+                    print(self.available_problems[0])
+                    self.lst_problems_text.set(self.available_problems[0])
+
+        self.lst_problems.bind('<Button-3>', _update_problem_list)
         self.lst_problems.grid(row=TK_ROW_INFO, column=2, sticky=tk.EW)
         self.__init_widget_problems()
 
