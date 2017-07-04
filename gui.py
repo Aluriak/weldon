@@ -204,7 +204,7 @@ class WeldonInterface(tk.Frame):
         self.but_close = tk.Button(parent, text='Quit', command=self.confirm_close, width=8)
         self.but_close.grid(row=TK_ROW_INFO, column=6, sticky=tk.EW)
 
-        error_font = font.Font(family='Helvetica', size=10, weight='bold')
+        error_font = font.Font(family='TkFixedFont', size=10, weight='bold')
         self.current_error = tk.StringVar(value=' ' * 40)
         self.lab_error = tk.Label(parent, textvariable=self.current_error, fg=COLOR_ERR, height=1, font=error_font)
         self.lab_error.grid(row=TK_ROW_FOOTER, column=0, sticky=tk.W, columnspan=8)
@@ -215,7 +215,7 @@ class WeldonInterface(tk.Frame):
         self.result_widgets = []
 
         # used after submit, when user clicks on test
-        self.result_font = font.Font(family='Helvetica', size=13)
+        self.result_font = font.Font(family='TkFixedFont', size=13)
         self.lab_sourcecode_text = tk.StringVar(value='')
         self.lab_sourcecode = tk.Label(self.result_widgets_frame, textvariable=self.lab_sourcecode_text, anchor='nw', justify='left', font=self.result_font, padx=10)
         self.lab_sourcecode.grid(row=0, column=4, sticky=tk.EW, rowspan=10, columnspan=3)
@@ -413,5 +413,10 @@ class WeldonInterface(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
+    # Be sure to use a monospaced font
+    default_font = font.nametofont('TkFixedFont')
+    default_font.configure(size=11)
+    root.option_add('*Font', default_font)
+
     WeldonInterface(root)
     root.mainloop()
