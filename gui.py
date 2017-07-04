@@ -349,6 +349,7 @@ class WeldonInterface(tk.Frame):
     def ask_report(self):
         if self._report_accessed:
             self.err('You must first send a submission before asking for a report')
+            self.but_test.configure(bg=COLOR_WAITING)
         elif self.__validate_current_state(validate_code=False):
             try:
                 print(self.client.retrieve_report(problem_id=self.lst_problems_text.get()))
