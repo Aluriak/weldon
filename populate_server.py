@@ -7,8 +7,25 @@ from webclient import Send as Client
 
 
 def populate(conn:Client):
+    for problem in copopulate(conn):
+        pass
+
+def populate_with(title:str, conn:Client):
+    (desc, public, hidden) = PROBLEMS[title]
+    return conn.register_problem(
+        title,
+        desc,
+        public_tests=public,
+        hidden_tests=hidden,
+    )
+
+def copopulate(conn:Client):
+    """Coroutine version, allowing client to perform one at a time
+    modification of remote server
+
+    """
     for title, (desc, public, hidden) in PROBLEMS.items():
-        problem = conn.register_problem(
+        yield conn.register_problem(
             title,
             desc,
             public_tests=public,
