@@ -27,25 +27,20 @@ def __transform_data(data:list) -> list:
 
     """
     return tuple(chain.from_iterable((
-        ([time] * nb_test)  # the value at x-axis must appears nb_test time in data
-        for time, nb_test in enumerate(data)
+        ([time] * value)  # the value at x-axis must appears value time in data
+        for time, value in enumerate(data)
     )))
 
 
-def plot_passed_tests(number_of_passed_test:iter) -> str:
+def plot_passed_tests(number_of_passed_test:iter, plot_height:int=10, legend:str='') -> str:
     # get timeline data in term of unique observation.
     data = __transform_data(number_of_passed_test)
-
-    # limit plot size
-    hist_height = max(number_of_passed_test)
-    while hist_height > MAX_PLOT_HEIGHT:
-        hist_height //= 2
 
     # print the plot
     output = StringIO()
     with redirect_stdout(output):
-        plot_hist(data, title='Number of passed tests according to time',
-                  pch='█', colour='green', height=hist_height)
+        plot_hist(data, title=legend,
+                  pch='█', colour='green', height=10)
     return output.getvalue()
 
 
@@ -59,13 +54,16 @@ def make_report_on_player(name:str, token:str,
     )
     yield ''
     final_submission = submissions[-1]
-    passed_tests = []  # number of passed test per submission
+    passed_tests = []  # (number of passed test, number of test)  per submission
     for submission in submissions:
         validated_tests = frozenset(test for test in submission.tests if test.succeed)
-        passed_tests.append(len(validated_tests))
+        passed_tests.append((len(validated_tests), len(submission.tests)))
+    passing_ratios = (int(passed / total * 100) for passed, total in passed_tests)
+    passed_tests = (passed for passed, _ in passed_tests)
 
     # add a few padding on the left of the plot.
-    yield from ('\t' + line for line in plot_passed_tests(passed_tests).splitlines())
+    yield from ('\t' + line for line in plot_passed_tests(passed_tests, legend='Number of passing tests').splitlines())
+    yield from ('\t' + line for line in plot_passed_tests(passing_ratios, legend='Ratio of passing tests').splitlines())
 
     yield ''
     yield '#' * 10 + ' Final submission ' + '#' * 10
