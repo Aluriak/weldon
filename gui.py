@@ -72,48 +72,12 @@ class ServerDialog(tk.Toplevel):
     def __config_to_widgets(self, can_cancel:bool):
         parent = self
 
-        def build_string_field(field, value, rowid:int):
-            value_holder = tk.StringVar(parent, value=value)
-            label = tk.Label(parent, text=field)
-            entry = tk.Entry(parent, textvariable=value_holder)
-            try:  # first try the new way
-                value_holder.trace_add("write", gen_callback(entry, {value}, value_holder))
-            except AttributeError:  # then the deprecated one
-                value_holder.trace("w", gen_callback(entry, {value}, value_holder))
-            label.grid(row=rowid, column=0)
-            entry.grid(row=rowid, column=1)
-            return value_holder
-
         def build_field(field, value, rowid, widget_type=tk.Entry, holder_type=tk.StringVar, var_param='textvariable', type=str, **widget_args):
             label = tk.Label(parent, text=field)
             value_holder = holder_type(value=value)
             box = widget_type(parent, **{var_param: value_holder}, **widget_args)
             try:  # first try the new way
                 value_holder.trace_add("write", gen_callback(box, {value}, value_holder, type=type))
-            except AttributeError:  # then the deprecated one
-                value_holder.trace("w", gen_callback(box, {value}, value_holder))
-            label.grid(row=rowid, column=0)
-            box.grid(row=rowid, column=1)
-            return value_holder
-
-        def build_int_field(field, value, rowid:int):
-            label = tk.Label(parent, text=field)
-            value_holder = tk.StringVar(value=value)  # IntVar makes the cast itself, leading to errors
-            box = tk.Spinbox(parent, from_=1025, to=64000, increment=1, textvariable=value_holder)
-            try:  # first try the new way
-                value_holder.trace_add("write", gen_callback(box, {value}, value_holder, type=int))
-            except AttributeError:  # then the deprecated one
-                value_holder.trace("w", gen_callback(box, {value}, value_holder))
-            label.grid(row=rowid, column=0)
-            box.grid(row=rowid, column=1)
-            return value_holder
-
-        def build_bool_field(field, value, rowid:int):
-            label = tk.Label(parent, text=field)
-            value_holder = tk.Variable(value=value)
-            box = tk.Checkbutton(parent, var=value_holder)
-            try:  # first try the new way
-                value_holder.trace_add("write", gen_callback(box, {value}, value_holder))
             except AttributeError:  # then the deprecated one
                 value_holder.trace("w", gen_callback(box, {value}, value_holder))
             label.grid(row=rowid, column=0)
