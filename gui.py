@@ -11,6 +11,7 @@ from functools import partial
 from webclient import Send as Client
 from commons import ServerError
 
+from tooltip import ToolTip
 
 WINDOW_HEIGHT, WINDOW_WIDTH = 800, 600
 TK_ROW_INFO = 1
@@ -147,6 +148,7 @@ class WeldonInterface(tk.Frame):
         self.but_server_text = tk.StringVar(value='Server')
         self.but_server = tk.Button(parent, textvariable=self.but_server_text, command=self.configure_server, bg=COLOR_UNSET, width=8)
         self.but_server.grid(row=TK_ROW_INFO, column=0, sticky=tk.EW, columnspan=1)
+        ToolTip.on(self.but_server, 'ON: you are root\nOFF: you are a regular user')
 
         self.lab_problems = tk.Label(parent, text='Problem:')
         self.lab_problems.grid(row=TK_ROW_INFO, column=1, sticky=tk.EW)
@@ -155,6 +157,7 @@ class WeldonInterface(tk.Frame):
         self.lst_problems_text = tk.StringVar(value='')
         self.lst_problems_trace = None  # will be used for later trace management
         self.lst_problems = tk.Spinbox(parent, textvariable=self.lst_problems_text, bg=COLOR_UNSET, wrap=True)
+        ToolTip.on(self.lst_problems, 'Select the problem you want to solve using the arrows or the right-clic')
 
         def _update_problem_list(event):
             """Binded on user interaction with the list of problems"""
@@ -172,6 +175,7 @@ class WeldonInterface(tk.Frame):
 
         self.but_sourcefile = tk.Button(parent, text='Source code', command=self.find_source_code, bg=COLOR_UNSET)
         self.but_sourcefile.grid(row=TK_ROW_INFO, column=3, sticky=tk.EW)
+        ToolTip.on(self.but_sourcefile, 'Filename containing the answer to the selected problem')
 
         self.but_test = tk.Button(parent, text='Submit', command=self.submit)
         self.but_test.grid(row=TK_ROW_INFO, column=4, sticky=tk.EW)
@@ -179,6 +183,7 @@ class WeldonInterface(tk.Frame):
         self.but_report.grid(row=TK_ROW_INFO, column=5, sticky=tk.EW)
         self.but_close = tk.Button(parent, text='Quit', command=self.confirm_close, width=8)
         self.but_close.grid(row=TK_ROW_INFO, column=6, sticky=tk.EW)
+        ToolTip.on(self.but_close, 'Filename containing the answer to the selected problem')
 
         error_font = font.Font(family='TkFixedFont', size=10, weight='bold')
         self.current_error = tk.StringVar(value=' ' * 40)
