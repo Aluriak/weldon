@@ -93,7 +93,6 @@ class Server:
         self._encryption_keypair = HybridEncryption()
         print('SERVER PUBLIC KEY:', self._encryption_keypair.publickey_as_string)
 
-    # @property
     def api_methods(self) -> {str: bool}:
         """Return map of methods of server that belongs to the API with
         a boolean indicating if it needs root to be used.
