@@ -89,7 +89,10 @@ that will naturally arise when Weldon will quit the POC stage.
 - [ ] provides one supplementary problem example, with different use-case and more complex story (involving multiple problems and students).
 - [x] over the network discussion between server and players, allowing the program to be used by multiple players without access to the server machine, and also ensure that players do not access internal data of the server (that includes hidden tests and everyone's users).
 - [ ] verify multi-user handling of the WebInterface
-- [ ] network discussion needs encryption: using wireshark its easy to intercept token, source and submissions of others players.
+- [x] network discussion needs encryption: using wireshark its easy to intercept token, source and submissions of others players.
+  - [x] found how to perform asymmetric encryption using python
+  - [x] integrate it into code
+  - [x] allow clients to perform encryption if the python module is available.
 - [ ] extend weldon to work with arbitrary command for testing result generation (this leads to arbitrary language support).
 - [ ] arbitrary language and unit test framework support.
 
@@ -141,3 +144,25 @@ Currently, the community tests, at submission, are tested in the following way:
 These restrictions are somehow violent, because they prevent users to use
 pytest fixtures system, and not enough against a really motivated attacker.
 All these verifications are deactivable if necessary.
+
+
+## Data exchange protocol
+Server and client exchange data using the following protocol.
+
+Both client and server send a JSON-formatted dictionary with two keys:
+- `encryption_key`: contains the encryption key (null when no encryption)
+- `payload`: contains the (possibly encrypted) data
+
+Server also provides `status`, which is either `succeed` or `failed`.
+In fail case, the payload is not encrypted and contains the error
+message describing the origin of the failure (for instance: bad parameters for a command).
+
+
+### Encryption
+Encryption is performed with [PyCrypto](https://www.dlitz.net/software/pycrypto/), and wrapped in an [hybrid encryption system](hybrid_encryption.py).
+
+The first step of communication between a client and a server, if the client wants its communications to be encrypted,
+is the retrieval of server's public key. This method is integrated in the API itself.
+The second step is made during registration, where the client may communicate its public key.
+
+Server and client expect payloads to be encrypted with the public key they communicate.
