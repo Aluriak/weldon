@@ -91,7 +91,6 @@ class Server:
         self._players_encryption_key = defaultdict(lambda: None)  # token: public key
         self._players_from_name = {}  # name: token
         self._encryption_keypair = HybridEncryption()
-        print('SERVER PUBLIC KEY:', self._encryption_keypair.publickey_as_string)
 
     def api_methods(self) -> {str: bool}:
         """Return map of methods of server that belongs to the API with
@@ -151,8 +150,6 @@ class Server:
     def decrypt_user_command(self, data:bytes, key:bytes or None) -> str:
         """Return the given data after its decryption if necessary"""
         try:
-            print('DECRYPT DATA:', data)
-            print('DECRYPT KEY:', key)
             if key:
                 data = self._encryption_keypair.decrypt(data, key)
             return wjson.from_json(data)
@@ -167,7 +164,6 @@ class Server:
         Input data is expected to be a json formatted payload.
 
         """
-        print('JSON DATA:', data)
         data = wjson.from_json(data)
         assert set(data.keys()) == {'encryption_key', 'payload'}
         data_payload, data_key = data['payload'], data['encryption_key']
@@ -184,28 +180,21 @@ class Server:
                         result = wjson.as_json(result)
                 except TypeError as err:  # unwanted parameters
                     raise ServerError('|'.join(err.args))
-                print('RESULT:', result)
-                print('RESULT TYPE:', type(result))
                 token = None
                 if command_method.need_token:
                     token = kwargs.get('token') or args[0]
                 payload, key = self.encrypt_for_user(result, token)
-                print('KEY:', key)
-                print('PAYLOAD TYPE:', type(payload))
                 if key:  # then the payload have been encrypted
                     key = base64.b64encode(key).decode()
                     payload = base64.b64encode(payload).decode()
                 assert isinstance(key, str) or key is None
                 assert isinstance(payload, str)
-                print('SENT PAYLOAD TYPE:', type(payload))
                 tosend = {
                     'status': 'succeed',
                     'encryption_key': key,
                     'payload': payload,
                 }
-                print('TOSEND STRUCT:', tosend)
                 tosend = wjson.as_json(tosend)
-                print('TOSEND JSON:', tosend)
             except ServerError as err:
                 print('ServerError:', '|'.join(map(str, err.args)))
                 tosend = ERROR_PAYLOAD.format(err.args[0])

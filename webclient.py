@@ -19,9 +19,7 @@ def create_payload(function:str, *args:str, keypair=None, server_pubkey=None, **
     Will encrypt it if keypair and server public key are given.
 
     """
-    print('COMMAND:', function)
     payload = wjson.as_json((function, tuple(args), dict(kwargs)))
-    print('RAW PAYLOAD:', payload)
     key = None
     if keypair and server_pubkey:
         payload, key = keypair.encrypt(payload, server_pubkey)
@@ -33,8 +31,6 @@ def create_payload(function:str, *args:str, keypair=None, server_pubkey=None, **
         'encryption_key': key,
         'payload': payload,
     })
-    print('READY PAYLOAD:', data)
-    print('ENCODED PAYLOAD:', data.encode())
     return data.encode()
 
 
@@ -43,7 +39,6 @@ def send(payload:bytes, port:int=TCP_PORT, buffer_size:int=BUFFER_SIZE,
     """Send and retrieve the answer through TCP socket"""
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
-    print('PAYLOAD TO SEND:', payload)
     s.send(payload)
 
     buffer = True
@@ -51,7 +46,6 @@ def send(payload:bytes, port:int=TCP_PORT, buffer_size:int=BUFFER_SIZE,
     while buffer:
         buffer = s.recv(buffer_size).decode()
         received += buffer
-    print('RECEIVED:', received)
     data = wjson.from_json(received)
     s.close()
     return data
@@ -68,12 +62,9 @@ def extract_payload(data:dict, keypair=None) -> str:
         key = base64.b64decode(data['encryption_key'])
         if not keypair:
             raise ValueError("Payload is encrypted, but keypair is not provided")
-        print('SVFJGL RECEIVED KEY:', data['encryption_key'])
-        print('SVFJGL PUBKEY:', key)
         ret = keypair.decrypt(payload, key)
     else:  # succeed but not encrypted
         ret = data['payload']
-    print('RECEIVED PAYLOAD:', ret)
     return ret
 
 
@@ -112,7 +103,6 @@ class Send:
         """Contact the server in order to get its public key"""
         self.server_pubkey = None
         self.server_pubkey = self._send(command='get_public_key')
-        print('SERVER PUBLIC KEY:', self.server_pubkey)
 
 
     def register(self):
