@@ -36,6 +36,11 @@ def test_aes_cipher():
     cipher = henc.AESCipher(b'hadoken!hadoken!')
     assert cipher.decrypt(cipher.encrypt('coucou')) == 'coucou'
 
+def test_aes_cipher_with_lots_of_data():
+    cipher = henc.AESCipher(b'hadoken!hadoken!')
+    data = 'coucou'*1000000
+    assert cipher.decrypt(cipher.encrypt(data)) == data
+
 
 def test_hybrid_encryption():
     cipher = henc.HybridEncryption()
@@ -55,3 +60,21 @@ def test_hybrid_encryption_two_agents():
     # Alice decrypt the message (a pair (data, key)) using its key pair.
     alice_received = alice.decrypt(*message)
     assert alice_received == 'Hi Alice !'
+
+
+def test_hybrid_pubkey_export():
+    cipher = henc.HybridEncryption()
+    assert isinstance(cipher.publickey, bytes)
+    assert isinstance(cipher.publickey_as_bytes, bytes)
+    assert isinstance(cipher.publickey_as_string, str)
+    assert isinstance(cipher.publickey_as_b64, str)
+    assert not isinstance(cipher.publickey_as_obj, (bytes, str))
+
+    recovered = henc.HybridEncryption.publickey_from(cipher.publickey_as_bytes)
+    assert recovered == cipher.publickey_as_obj
+
+    recovered = henc.HybridEncryption.publickey_from(cipher.publickey_as_string)
+    assert recovered == cipher.publickey_as_obj
+
+    recovered = henc.HybridEncryption.publickey_from_b64(cipher.publickey_as_b64)
+    assert recovered == cipher.publickey_as_obj
