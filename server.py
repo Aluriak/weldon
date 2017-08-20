@@ -10,6 +10,7 @@ import inspect
 import functools
 from collections import defaultdict, namedtuple
 
+import encryption
 from wtest import Test
 from commons import SubmissionResult, ServerError
 from problem import Problem
@@ -81,7 +82,9 @@ class Server:
                                      self.retrieve_players_of}
         self._db = defaultdict(lambda: defaultdict(list))  # token: {problem_id: [data]}
         self._players_name = {}  # token: name
+        self._players_encryption_key = defaultdict(lambda: None)  # token: public key
         self._players_from_name = {}  # name: token
+        self._encryption_keypair = encryption.generate_key_pair()
 
 
     # @property
@@ -133,17 +136,18 @@ class Server:
             token_set.add(new)
             self._players_name[new] = str(name)
             self._players_from_name[str(name)] = new
+            self._players_encryption_key[new] = public_key
             return new
         else:
             raise ServerError('Registration failed: bad password.')
 
     @api_method
-    def register_player(self, name:str, password:str='') -> str:
-        return self._register_user(name, password, root=False)
+    def register_player(self, name:str, password:str='', public_key:bytes=None) -> str:
+        return self._register_user(name, password, root=False, public_key=public_key)
 
     @api_method
-    def register_rooter(self, name:str, password:str='') -> str:
-        return self._register_user(name, password, root=True)
+    def register_rooter(self, name:str, password:str='', public_key:bytes=None) -> str:
+        return self._register_user(name, password, root=True, public_key=public_key)
 
     @api_method
     def list_problems(self, token:str) -> [id]:
