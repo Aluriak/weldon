@@ -3,6 +3,7 @@
 import random
 from pprint import pprint
 
+from hybrid_encryption import HybridEncryption
 from webserver import PORT as TCP_PORT, BUFFER_SIZE
 from webclient import Send
 from commons import ServerError
@@ -74,7 +75,8 @@ print('#' * 80)
 # Registering is performed by the rooter.
 # It gives to the server the exact definition of the problem,
 #  that any player can retrieve.
-root_conn = Send(name='lucas', registration_password='SHUBISHI', root=True)
+root_keypair = HybridEncryption()
+root_conn = Send(name='lucas', registration_password='SHUBISHI', root=True, keypair=root_keypair)
 assert root_conn.get_api() == root_conn.server_api  # the first request the server
 
 print("Rooter register itself as a rooter, getting (secret) token '{}'."
