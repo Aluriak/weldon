@@ -60,7 +60,7 @@ class HybridEncryption:
         self._aes_key_size = int(aes_key_size)
 
 
-    def encrypt(self, data:bytes, pubkey) -> (bytes, bytes):
+    def encrypt(self, data:bytes, pubkey:bytes) -> (bytes, bytes):
         """Return given data as a 2-uplet (encrypted data, key).
 
         key is encrypted using given RSA public key.
@@ -77,8 +77,9 @@ class HybridEncryption:
         return AESCipher(aes_key).decrypt(data)
 
 
-    def _encrypted_aes_key(self, aes_key:bytes, pubkey) -> bytes:
+    def _encrypted_aes_key(self, aes_key:bytes, pubkey:bytes) -> bytes:
         """Use RSA keypair in order to encrypt given aes key"""
+        pubkey = HybridEncryption.publickey_from(pubkey)
         cipher = PKCS1_OAEP.new(RSA.importKey(pubkey.exportKey('DER')))
         return cipher.encrypt(aes_key)
 
@@ -88,4 +89,21 @@ class HybridEncryption:
         return cipher.decrypt(enc_aes_key)
 
     @property
-    def publickey(self): return self._keypair.publickey()
+    def _publickey(self) -> RSA: return self._keypair.publickey()
+    @property
+    def publickey(self) -> bytes: return self.publickey_as_bytes
+    @property
+    def publickey_as_obj(self) -> RSA: return self._publickey
+    @property
+    def publickey_as_bytes(self) -> bytes: return self._publickey.exportKey(format='DER')
+    @property
+    def publickey_as_b64(self) -> str: return base64.b64encode(self.publickey_as_bytes).decode()
+    @property
+    def publickey_as_string(self) -> str: return self._publickey.exportKey(format='PEM').decode()
+
+    @staticmethod
+    def publickey_from(pubkey:bytes or str) -> RSA: return RSA.importKey(pubkey)
+    @staticmethod
+    def publickey_from_b64(pubkey:str) -> RSA: return HybridEncryption.publickey_from(base64.b64decode(pubkey))
+    @staticmethod
+    def publickey_to_bytes_from_obj(pubkey:RSA) -> bytes: return pubkey.exportKey(format='DER')
