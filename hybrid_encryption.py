@@ -1,6 +1,14 @@
 """Implementation of hybrid encryption
 with a very simple API.
 
+The hybrid encryption is defined as such:
+In order to save efficiency, the message itself is encrypted using
+the AES symmetric encryption.
+The key of the AES encryption, generated randomly at each encryption task,
+is itself encrypted using RSA/PKCS1_OAEP cipher.
+Therefore, only the expected recipee can decipher the AES key,
+and therefore use it to decrypt the message.
+
 """
 import base64
 from Crypto import Random
