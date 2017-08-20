@@ -1,6 +1,7 @@
 
 
 import encryption as enc
+import hybrid_encryption as henc
 
 
 def test_all():
@@ -29,3 +30,28 @@ def run(crypto:bool=True):
         assert encrypted != MESSAGE.encode()
         assert enc.Crypto is not None
         assert enc.public_key_from_key_pair(pair) is not None
+
+
+def test_aes_cipher():
+    cipher = henc.AESCipher(b'hadoken!hadoken!')
+    assert cipher.decrypt(cipher.encrypt('coucou')) == 'coucou'
+
+
+def test_hybrid_encryption():
+    cipher = henc.HybridEncryption()
+    assert cipher.decrypt(*cipher.encrypt('coucou', cipher.publickey)) == 'coucou'
+
+
+def test_hybrid_encryption_two_agents():
+    # Let's retry the same thing, but with distinct keypairs
+    # Alice and Bob have their personnal key pair
+    alice = henc.HybridEncryption()
+    bob = henc.HybridEncryption()
+
+    # Bob send a message to Alice using her public key.
+    message = bob.encrypt('Hi Alice !', alice.publickey)
+    assert message != 'Hi Alice !'
+
+    # Alice decrypt the message (a pair (data, key)) using its key pair.
+    alice_received = alice.decrypt(*message)
+    assert alice_received == 'Hi Alice !'

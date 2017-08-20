@@ -89,23 +89,3 @@ class HybridEncryption:
 
     @property
     def publickey(self): return self._keypair.publickey()
-
-
-if __name__ == '__main__':
-    cipher = AESCipher(b'hadoken!hadoken!')
-    assert cipher.decrypt(cipher.encrypt('coucou')) == 'coucou'
-
-    cipher = HybridEncryption()
-    assert cipher.decrypt(*cipher.encrypt('coucou', cipher.publickey)) == 'coucou'
-
-    # Let's retry the same thing, but with distinct keypairs
-    # Alice and Bob have their personnal key pair
-    alice = HybridEncryption()
-    bob = HybridEncryption()
-
-    # Bob send a message to Alice using her public key.
-    message = bob.encrypt('Hi Alice !', alice.publickey)
-
-    # Alice decrypt the message (a pair (data, key)) using its key pair.
-    alice_received = alice.decrypt(*message)
-    assert alice_received == 'Hi Alice !'
