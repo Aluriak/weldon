@@ -1,5 +1,7 @@
-"""Implementation of the webserver, making the bridge between
+"""Implementation of the server interface, making the bridge between
 client and Weldon.
+
+The WebInterface is implementing the socket server, waiting for communications.
 
 """
 
@@ -23,8 +25,6 @@ class WebInterface:
         self.server = server
         self._ip = str(ip)
         self._port = int(port)
-        self._buffer_size = int(buffer_size)
-        self._continue = True
         self._server_methods = dict(self.server.api_methods())
 
     def run(self):
@@ -39,7 +39,7 @@ class WebInterface:
 
             """
             def handle(slf):
-                slf.wfile.write(self.handle(slf.rfile.readline().strip().decode()).encode())
+                slf.wfile.write(self.handle(slf.rfile.readline().decode().strip()).encode())
 
         server = socketserver.TCPServer((self._ip, self._port), TCPHandler)
         server.serve_forever()
@@ -47,20 +47,7 @@ class WebInterface:
 
     def handle(self, data:str) -> str:
         """Handle given data, return the data to return"""
-        command, args, kwargs = wjson.from_json(data)
-        if command in self._server_methods:
-            try:
-                data = {
-                    'status': 'success',
-                    'payload': getattr(self.server, command)(*args, **kwargs)
-                }
-            except ServerError as err:
-                print('ServerError:', '|'.join(map(str, err.args)))
-                data = {'status': 'failed', 'payload': err.args[0]}
-            sent = wjson.as_json(data)
-            return sent
-        return '{"status":"failed","payload":"Invalid command."}'
-
+        return self.server.handle_transaction(data)
 
 
 if __name__ == "__main__":

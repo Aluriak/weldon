@@ -6,16 +6,19 @@
 import os
 import re
 import uuid
+import base64
 import inspect
 import functools
+from json import JSONDecodeError
 from collections import defaultdict, namedtuple
 
-import encryption
+import wjson
 from wtest import Test
 from commons import SubmissionResult, ServerError
 from problem import Problem
 from run_pytest import result_from_pytest
 from player_report import make_report_on_player
+from hybrid_encryption import HybridEncryption
 
 
 # A valider is a pair (valider function, error message)
@@ -25,13 +28,14 @@ NAME_MAIL_VALIDER = (
     "Name must be an email adress ; Note that the regex for mail address "
     "detection is probably not exhaustive"
 )
+ERROR_PAYLOAD = '{{"status":"failed","encryption_key":null,"payload":"{}"}}'
 
 
 def api_method(func:callable) -> callable:
     """Decorator around method callable by Server API.
 
     If decorated func have a `token` parameter, it will first be validated
-    (by verifying it is valid for given operation)
+    (by verifying it is valid for given operation).
 
     Also, functions wrapped will get a marker allowing server instances
     to know which functions belongs to the API.
@@ -45,8 +49,10 @@ def api_method(func:callable) -> callable:
         def decorator(self, token, *args, **kwargs):
             self._validate_token(token, getattr(self, func.__name__))
             return func(self, token, *args, **kwargs)
-    else:  # method is not wrapped (nothing to do)
+        decorator.need_token = True
+    else:  # method is not wrapped
         decorator = func
+        decorator.need_token = False
     decorator.belong_to_server_api = True  # marker
     return decorator
 
@@ -84,8 +90,8 @@ class Server:
         self._players_name = {}  # token: name
         self._players_encryption_key = defaultdict(lambda: None)  # token: public key
         self._players_from_name = {}  # name: token
-        self._encryption_keypair = encryption.generate_key_pair()
-
+        self._encryption_keypair = HybridEncryption()
+        print('SERVER PUBLIC KEY:', self._encryption_keypair.publickey_as_string)
 
     # @property
     def api_methods(self) -> {str: bool}:
@@ -123,7 +129,95 @@ class Server:
                 in self.api_methods_parameters().items()
                 if not getattr(self, name) in self.restricted_to_rooter}
 
-    def _register_user(self, name:str, password:str, root:bool=False) -> 'token' or ServerError:
+
+    @api_method
+    def get_public_key(self) -> str:
+        """Return the encryption key to use to speak to the server"""
+        return self._encryption_keypair.publickey_as_string
+
+    def user_use_encryption(self, token) -> bool:
+        """True if an encryption key is associated with given token"""
+        return bool(self._players_encryption_key.get(token))
+
+    def encrypt_for_user(self, data:bytes, token) -> (bytes, bytes or None):
+        """If token is associated with an encryption key, given data will
+        be encrypted towards it"""
+        if self.user_use_encryption(token):
+            assert token is not None, "server known a token named None"
+            data, key = self._encryption_keypair.encrypt(data, self._players_encryption_key[token])
+        else:  # no encryption used
+            key = None
+        return data, key
+
+    def decrypt_user_command(self, data:bytes, key:bytes or None) -> str:
+        """Return the given data after its decryption if necessary"""
+        try:
+            print('DECRYPT DATA:', data)
+            print('DECRYPT KEY:', key)
+            if key:
+                data = self._encryption_keypair.decrypt(data, key)
+            return wjson.from_json(data)
+        except JSONDecodeError:  # it's not encrypted, but not json either
+            raise ServerError("Received data is not json, nor decryptable")
+
+
+    def handle_transaction(self, data:str) -> bytes:
+        """Receive data, decrypt it, run the command, perform the encryption
+        of the return value.
+
+        Input data is expected to be a json formatted payload.
+
+        """
+        print('JSON DATA:', data)
+        data = wjson.from_json(data)
+        assert set(data.keys()) == {'encryption_key', 'payload'}
+        data_payload, data_key = data['payload'], data['encryption_key']
+        command, args, kwargs = self.decrypt_user_command(
+            base64.b64decode(data_payload) if data_key else data_payload,
+            base64.b64decode(data_key) if data_key else None,
+        )
+        command_method = getattr(self, command)
+        if command in self.api_methods():
+            try:
+                try:
+                    result = command_method(*args, **kwargs)
+                    if True or not isinstance(result, str):  # result must be str
+                        result = wjson.as_json(result)
+                except TypeError as err:  # unwanted parameters
+                    raise ServerError('|'.join(err.args))
+                print('RESULT:', result)
+                print('RESULT TYPE:', type(result))
+                token = None
+                if command_method.need_token:
+                    token = kwargs.get('token') or args[0]
+                payload, key = self.encrypt_for_user(result, token)
+                print('KEY:', key)
+                print('PAYLOAD TYPE:', type(payload))
+                if key:  # then the payload have been encrypted
+                    key = base64.b64encode(key).decode()
+                    payload = base64.b64encode(payload).decode()
+                assert isinstance(key, str) or key is None
+                assert isinstance(payload, str)
+                print('SENT PAYLOAD TYPE:', type(payload))
+                tosend = {
+                    'status': 'succeed',
+                    'encryption_key': key,
+                    'payload': payload,
+                }
+                print('TOSEND STRUCT:', tosend)
+                tosend = wjson.as_json(tosend)
+                print('TOSEND JSON:', tosend)
+            except ServerError as err:
+                print('ServerError:', '|'.join(map(str, err.args)))
+                tosend = ERROR_PAYLOAD.format(err.args[0])
+        else:  # command not in api methods
+            tosend = ERROR_PAYLOAD.format('Unknow command.')
+        return tosend
+
+
+
+    def _register_user(self, name:str, password:str, root:bool=False,
+                       public_key:str=None) -> 'token' or ServerError:
         """Perform the registration for player (rooter if `root`)"""
         expected_password = self.rooter_password if root else self.player_password
         name_valider = self._rooter_name_valider if root else self._player_name_valider
@@ -136,6 +230,10 @@ class Server:
             token_set.add(new)
             self._players_name[new] = str(name)
             self._players_from_name[str(name)] = new
+            if public_key:
+                public_key = HybridEncryption.publickey_from(public_key)
+                public_key = HybridEncryption.publickey_to_bytes_from_obj(public_key)
+            assert isinstance(public_key, bytes) or public_key is None
             self._players_encryption_key[new] = public_key
             return new
         else:
