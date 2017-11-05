@@ -30,7 +30,7 @@ class ToolTip:
         y = y + cy + self.widget.winfo_rooty() +27
         self.tipwindow = tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(1)
-        tw.wm_geometry('+%d+%d'.format(x, y))
+        tw.wm_geometry('+{}+{}'.format(x, y))
         try:
             # For Mac OS
             tw.tk.call("::tk::unsupported::MacWindowStyle",
