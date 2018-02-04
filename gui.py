@@ -76,7 +76,9 @@ class ServerDialog(tk.Toplevel):
         def build_field(field, value, rowid, widget_type=tk.Entry, holder_type=tk.StringVar, var_param='textvariable', type=str, **widget_args):
             label = tk.Label(parent, text=field)
             value_holder = holder_type(value=value)
-            box = widget_type(parent, **{var_param: value_holder}, **widget_args)
+            kwargs = {var_param: value_holder}  # py 3.4 compatibility
+            kwargs.update(widget_args)
+            box = widget_type(parent, **kwargs)
             try:  # first try the new way
                 value_holder.trace_add("write", gen_callback(box, {value}, value_holder, type=type))
             except AttributeError:  # then the deprecated one

@@ -150,9 +150,9 @@ class Send:
 
     def _send(self, command, **kwargs):
         """Send request to the server"""
-        payload = create_payload(command, **kwargs,
-                                 keypair=self.keypair,
-                                 server_pubkey=self.server_pubkey)
+        kwargs = dict(kwargs)
+        kwargs.update({'keypair': self.keypair, 'server_pubkey': self.server_pubkey})    # py 3.4 compatibility
+        payload = create_payload(command, **kwargs)
         return wjson.from_json(extract_payload(send(
             payload, port=self.port,
             buffer_size=self.buffer_size, host=self.host

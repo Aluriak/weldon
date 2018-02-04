@@ -65,10 +65,14 @@ def jsonable_class(name:str, slots:iter, bases:iter=[], other_attributes={},
             'to_json': to_json,
             'from_json': from_json,
             'fields': property(get_fields),
-            **{slot.lstrip('_'): get_slot_getter(slot) for slot in slots
-               if slot.startswith('_')}, # else: no need for a accessor, slots are here
-            **other_attributes,
+            # **{slot.lstrip('_'): get_slot_getter(slot) for slot in slots
+               # if slot.startswith('_')}, # else: no need for a accessor, slots are here
+            # **other_attributes,
         }
+        attributes.update(other_attributes)  # py 3.4 compatibility
+        for slot in slots:
+            if slot.startswith('_'):
+                attributes[slot.lstrip('_')] = get_slot_getter(slot)
         if repr_as_str:
             attributes['__repr__'] = to_string
         return type(name, tuple(bases), attributes)
